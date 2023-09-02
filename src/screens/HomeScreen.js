@@ -17,7 +17,7 @@ const HomeScreen = ({navigation}) => {
   const [upcomingMoviesList, setUpcomingMoviesList] = useState(null);
   const [genresList, setGenresList] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
