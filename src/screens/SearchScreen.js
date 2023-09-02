@@ -14,7 +14,6 @@ const SearchScreen = ({navigation}) => {
 
   const pressSearchHandler = async (results) => {
     const list = await getSearchList(results);
-    console.log(list.results);
     setSearchList(list.results);
   }
 

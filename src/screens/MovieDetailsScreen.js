@@ -1,16 +1,23 @@
-import { Image, ImageBackground, StatusBar, ScrollView, ActivityIndicator, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { Dimensions, ImageBackground, StatusBar, ScrollView, ActivityIndicator, StyleSheet, Text, View, TouchableOpacity, TouchableWithoutFeedback, FlatList } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { getMovieDetails, getReviews, getCastList, baseImagePath } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { getCurrNowPlayingMoviesList } from '../data/data';
+
+import CastCard from '../components/CastCard';
+import CommentCard from '../components/CommentCard';
+
+const {width, height} = Dimensions.get('window');
 
 const MovieDetailsScreen = ({navigation, route}) => {
   const [movieDetails, setMovieDetails] = useState(null);
   const [reviews, setReviews] = useState(null);
   const [castList, setCastList] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [available, setAvailable] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -20,16 +27,37 @@ const MovieDetailsScreen = ({navigation, route}) => {
       setMovieDetails(movieDetails);
 
       const reviews = await getReviews(route.params.movieid)
-      setReviews(reviews);
+      setReviews(reviews.results);
 
       const castList = await getCastList(route.params.movieid)
-      setCastList(castList);
+      setCastList(castList.cast.filter(cast => cast.known_for_department == "Acting"));
+
+      const nowPlayingMoviesList = getCurrNowPlayingMoviesList();
+      for (let i = 0; i < nowPlayingMoviesList.length; ++i) {
+        if (nowPlayingMoviesList[i].id == route.params.movieid) {
+          setAvailable(true);
+          break;
+        }
+      }
 
       setLoaded(true);
     }
 
     fetchData();
   }, []);
+
+  const renderGenres = () => {
+    return (
+      movieDetails.genres.map((genre, index) => {
+          if (index < 3) return (
+            <View style={styles.genreBox}>
+              <Text style={styles.subText}>{genre.name}</Text>
+            </View>
+          )
+        }
+      )
+    )
+  }
 
   if (!loaded) {
     return (
@@ -77,19 +105,100 @@ const MovieDetailsScreen = ({navigation, route}) => {
             </View>
 
             <View style={{justifyContent: 'flex-end', alignItems: 'center', flex: 1, paddingBottom: 30}}>
-              <TouchableOpacity style={{borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.mainColor, paddingHorizontal: 20, paddingVertical: 10}}>
+              { available ?
+              (<TouchableOpacity onPress={() => {}} style={{borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.mainColor, paddingHorizontal: 20, paddingVertical: 10}}>
                 <MaterialCommunityIcons name="ticket-confirmation-outline" size={30} color="white" />
                 <Text style={styles.text}>Get Tickets</Text>
-              </TouchableOpacity>
+              </TouchableOpacity>)
+              :
+              (<View style={{borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'gray', paddingHorizontal: 20, paddingVertical: 10}}>
+                <MaterialCommunityIcons name="ticket-confirmation-outline" size={30} color="white" />
+                <Text style={styles.text}>Unavailable</Text>
+              </View>)
+              }
             </View>
 
           </LinearGradient>
         </ImageBackground>
-        {/* <View style={styles.imageBG}></View>
-        <Image
-          source={{uri: baseImagePath('w342', movieDetails.poster_path)}}
-          style={styles.cardImage}
-        /> */}
+      </View>
+      
+      <View style={{paddingHorizontal: 10}}>
+
+        <View style={{paddingTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+          <View style={{flexDirection: 'row'}}>
+            {renderGenres()}
+          </View>
+          <View style={{flexDirection: 'row', alignItems: 'center', gap: 5, marginRight: 5}}>
+            <AntDesign name="clockcircle" size={16} color={Colors.textColor} />
+            <Text style={{...styles.subText, fontSize: 12}}>{movieDetails.runtime} minutes</Text>
+          </View>
+        </View>
+
+        <View style={{paddingVertical: 20}}>
+          <Text style={{...styles.text, fontSize: 24}}>{movieDetails.original_title}</Text>
+        </View>
+
+        <View>
+          <Text numberOfLines={6} style={styles.subText}>{movieDetails.overview}</Text>
+        </View>
+
+        <View style={{paddingVertical: 20}}>
+          <Text style={{...styles.text, fontSize: 20}}>Top Cast</Text>
+        </View>
+
+        <View>
+          <FlatList
+            data={castList}
+            keyExtractor={(item) => item.id}
+            horizontal
+            bounces={false}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{gap: 5}}
+            decelerationRate="fast"
+            renderItem={({item, index}) => (
+              <CastCard
+                cardWidth={width/6}
+                isFirst={index == 0 ? true : false}
+                isLast={index == castList.length - 1 ? true : false}
+                name={item.name}
+                imagePath={baseImagePath('w342', item.profile_path)}
+              />
+            )}
+          />
+        </View>
+
+        <View style={{paddingVertical: 20}}>
+          <Text style={{...styles.text, fontSize: 20}}>Reviews</Text>
+        </View>
+        
+        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+          <Text style={styles.subText}>{reviews.length} Comments</Text>
+          <View style={styles.voteContainer}>
+            <AntDesign name="star" size={18} color={Colors.mainColor} />
+            <Text style={styles.subText}>{movieDetails.vote_average} ({movieDetails.vote_count})</Text>
+          </View>
+        </View>
+
+        <View>
+          <FlatList
+            data={reviews}
+            keyExtractor={(item) => item.id}
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{gap: 0}}
+            decelerationRate="fast"
+            renderItem={({item, index}) => (
+              <CommentCard
+                cardWidth={width}
+                name={item.author}
+                rating={item.author_details.rating}
+                imagePath={item.author_details.avatar_path}
+                content={item.content}
+              />
+            )}
+          />
+        </View>
+
       </View>
 
     </ScrollView>
@@ -137,5 +246,23 @@ const styles = StyleSheet.create({
   text: {
     color: Colors.textColor,
     fontFamily: 'nunito-bold',
+  },
+  genreBox: {
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#484747',
+    marginHorizontal: 5,
+  },
+  subText: {
+    fontFamily: 'nunito-regular',
+    fontSize: 14,
+    color: Colors.textColor,
+  },
+  voteContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10
   },
 })

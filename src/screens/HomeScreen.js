@@ -39,6 +39,7 @@ const HomeScreen = ({navigation}) => {
       setLoaded(true);
     }
 
+    setLoaded(true);
     if (getCurrNowPlayingMoviesList() == null) fetchData();
   }, []);
 
@@ -143,7 +144,7 @@ const HomeScreen = ({navigation}) => {
             }}
             cardWidth={width / 3}
             isFirst={index == 0 ? true : false}
-            isLast={index == popularMoviesList?.length - 1 ? true : false}
+            isLast={index == popularMoviesList.length - 1 ? true : false}
             title={item.original_title}
             imagePath={baseImagePath('w342', item.poster_path)}
             isHorizontal={true}
@@ -166,7 +167,7 @@ const HomeScreen = ({navigation}) => {
             }}
             cardWidth={width - 36*2}
             isFirst={index == 0 ? true : false}
-            isLast={index == upcomingMoviesList?.length - 1 ? true : false}
+            isLast={index == upcomingMoviesList.length - 1 ? true : false}
             title={item.original_title}
             genres={item.genre_ids}
             imagePath={baseImagePath('w342', item.poster_path)}
