@@ -42,7 +42,9 @@ const TicketScreen = () => {
   }
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Now Showing</Text>
+      <View style={styles.titleSection}>
+        <Text style={styles.title}>My Tickets</Text>
+      </View>
       <Carousel
         data={TicketBooked}
         renderItem={({ item, index }) => {
@@ -73,8 +75,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+    // justifyContent: 'center',
+    // alignItems: 'center',
     backgroundColor: Colors.backgroundColor,
   },
   ticketContainer: {
@@ -83,10 +85,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cardImage: {
-    aspectRatio: 2 / 3,
-    borderRadius: 20,
-    // backgroundColor: 'red',
-    // height: 300,
+  titleSection: {
+    marginTop: 40,
+    paddingHorizontal: 20
+  },
+  title: {
+    fontFamily: 'nunito-bold',
+    fontSize: 26,
+    color: Colors.mainColor
   },
 })

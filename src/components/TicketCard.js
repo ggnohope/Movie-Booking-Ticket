@@ -57,7 +57,7 @@ const TicketCard = (props) => {
         </View>
         <View style={styles.detailBarcodeContainer}>
         <Image
-        style={{width: 250, height: 70, size: 10,}}
+        style={{width: 250, height: 70}}
         source={require('../../assets/barcode.png')}
       />
         </View>
@@ -70,7 +70,7 @@ const TicketCard = (props) => {
 
 const styles = StyleSheet.create({
   container: {
-    top: 100,
+    top: 40,
     left: 25,
     display: 'flex',
     flex: 1,
