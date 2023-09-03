@@ -8,8 +8,6 @@ import TicketCard from '../components/TicketCard';
 const { width, height } = Dimensions.get('window');
 
 const TicketScreen = () => {
-
-  console.log(TicketBooked[0].date.getDate())
   const [nowPlayingMoviesList, setNowPlayingMoviesList] = useState(null);
   const [loaded, setLoaded] = useState(true);
   useEffect(() => {
