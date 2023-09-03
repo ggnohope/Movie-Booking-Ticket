@@ -1,22 +1,21 @@
-import React, {useEffect, useRef, useState} from 'react';
-import { Text, View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator, ScrollView, StatusBar, FlatList,} from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Text, View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator, ScrollView, StatusBar, FlatList, Image } from 'react-native';
 import { getNowPlayingMoviesList, baseImagePath } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
 import Carousel from 'react-native-snap-carousel';
-import { getCurrNowPlayingMoviesList, setCurrNowPlayingMoviesList } from '../data/data';
+import { getCurrNowPlayingMoviesList, setCurrNowPlayingMoviesList, TicketBooked } from '../data/data';
 import TicketCard from '../components/TicketCard';
-
-const {width, height} = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const TicketScreen = () => {
 
+  console.log(TicketBooked[0].date.getDate())
   const [nowPlayingMoviesList, setNowPlayingMoviesList] = useState(null);
   const [loaded, setLoaded] = useState(true);
-  
   useEffect(() => {
     async function fetchData() {
       setLoaded(false);
-      
+
       let nowPlaying = await getNowPlayingMoviesList();
       setNowPlayingMoviesList(nowPlaying.results);
       setCurrNowPlayingMoviesList(nowPlaying.results);
@@ -26,7 +25,7 @@ const TicketScreen = () => {
     setLoaded(true);
     if (getCurrNowPlayingMoviesList() == null) fetchData();
   }, []);
-  
+
   if (!loaded) {
     return (
       <ScrollView
@@ -45,14 +44,15 @@ const TicketScreen = () => {
     <View style={styles.container}>
       <Text style={styles.text}>Now Showing</Text>
       <Carousel
-        data={nowPlayingMoviesList}
-        renderItem={({item, index})=> {
+        data={TicketBooked}
+        renderItem={({ item, index }) => {
           return (
             <TicketCard
-              cardWidth={width * 0.8}
-              title={item.original_title}
-              imagePath={baseImagePath('w780', item.poster_path)}
-
+              cardWidth={width * 0.7}
+              title={item.title}
+              imagePath={item.imgPath}
+              date={item.date}
+              position={item.position}
             />
           )
         }}
@@ -60,7 +60,8 @@ const TicketScreen = () => {
         inactiveSlideScale={0.85}
         inactiveSlideOpacity={0.6}
         sliderWidth={width}
-        itemWidth={width*0.8}
+        itemWidth={width * 0.8}
+        style={styles.ticketContainer}
       />
     </View>
   )
@@ -72,5 +73,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.backgroundColor,
+  },
+  ticketContainer: {
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardImage: {
+    aspectRatio: 2 / 3,
+    borderRadius: 20,
+    // backgroundColor: 'red',
+    // height: 300,
   },
 })
