@@ -106,7 +106,7 @@ const MovieDetailsScreen = ({navigation, route}) => {
 
             <View style={{justifyContent: 'flex-end', alignItems: 'center', flex: 1, paddingBottom: 30}}>
               { available ?
-              (<TouchableOpacity onPress={() => {}} style={{borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.mainColor, paddingHorizontal: 20, paddingVertical: 10}}>
+              (<TouchableOpacity onPress={() => {navigation.navigate('SeatBooking', {movieDetails: movieDetails})}} style={{borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.mainColor, paddingHorizontal: 20, paddingVertical: 10}}>
                 <MaterialCommunityIcons name="ticket-confirmation-outline" size={30} color="white" />
                 <Text style={styles.text}>Get Tickets</Text>
               </TouchableOpacity>)

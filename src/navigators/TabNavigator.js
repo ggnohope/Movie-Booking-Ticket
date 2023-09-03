@@ -19,12 +19,9 @@ const TabNavigator = () => {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: 'black',
-          borderColor: 'gray',
-          borderWidth: 1,
           height: 100,
           borderRadius: 75,
-          marginHorizontal: 0,
-          marginBottom: '-7%',
+          marginBottom: '-5%',
         },
       }}>
       <Tab.Screen
