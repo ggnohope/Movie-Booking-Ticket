@@ -100,7 +100,6 @@ const HomeScreen = ({navigation}) => {
           )}
         />
       </View>
-
       <Text style={styles.text}>Now Showing</Text>
       <Carousel
         data={nowPlayingMoviesList}
