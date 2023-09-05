@@ -6,12 +6,12 @@ export const setCurrUser = (newUser) => {
     currUser = newUser;
 };
 
-let currNowPlayingMoviesList = null;
+let currNowShowingMoviesList = null;
 
-export const getCurrNowPlayingMoviesList = () => currNowPlayingMoviesList;
+export const getCurrNowShowingMoviesList = () => currNowShowingMoviesList;
 
-export const setCurrNowPlayingMoviesList = (newCurrNowPlayingMoviesList) => {
-    currNowPlayingMoviesList = newCurrNowPlayingMoviesList;
+export const setCurrNowShowingMoviesList = (newCurrNowShowingMoviesList) => {
+    currNowShowingMoviesList = newCurrNowShowingMoviesList;
 };
 export const user = [{
     id: 1,

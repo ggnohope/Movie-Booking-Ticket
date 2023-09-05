@@ -5,7 +5,7 @@ import { Colors } from '../../assets/theme';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { getCurrNowPlayingMoviesList } from '../data/data';
+import { getCurrNowShowingMoviesList } from '../data/data';
 
 import CastCard from '../components/CastCard';
 import CommentCard from '../components/CommentCard';
@@ -32,7 +32,7 @@ const MovieDetailsScreen = ({navigation, route}) => {
       const castList = await getCastList(route.params.movieid)
       setCastList(castList.cast.filter(cast => cast.known_for_department == "Acting"));
 
-      const nowPlayingMoviesList = getCurrNowPlayingMoviesList();
+      const nowPlayingMoviesList = getCurrNowShowingMoviesList();
       for (let i = 0; i < nowPlayingMoviesList.length; ++i) {
         if (nowPlayingMoviesList[i].id == route.params.movieid) {
           setAvailable(true);

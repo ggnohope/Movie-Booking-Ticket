@@ -5,10 +5,9 @@ import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
 import { baseImagePath } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
 import { useEffect } from 'react';
-
+import { FIRESTORE_DB } from '../../firebaseConfig';
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
-
-const {width, height} = Dimensions.get('window');
 
 const initializeSeatDetails = () => {
   const seatDetails = [];
@@ -29,6 +28,7 @@ const SeatBookingScreen = ({navigation, route}) => {
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedHour, setSelectedHour] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [roomById, setRoomById] = useState([]); // 0: room of 7h30, 1: room of 10h30...
 
   const arrayCol = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   const arrayRow = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
@@ -185,6 +185,28 @@ const SeatBookingScreen = ({navigation, route}) => {
   }
 
   useEffect(() => {
+    //fetch data
+    async function fetchData() {
+      const docRef = doc(FIRESTORE_DB, 'schedule', route.params.movieDetails.id.toString());
+      const docSnapshot = await getDoc(docRef);
+
+      console.log(docSnapshot.id, docSnapshot.data());
+
+      const tempHours = ['07:30', '10:30', '13:30', '16:30', '19:30', '22:30'];
+      let tempRooms = [];
+      for (let i = 0; i < 6; ++i) {
+        for (let j = 0; j < 6; ++j) {
+          if (docSnapshot.get(`P${j+1}`) == tempHours[i]) {
+            tempRooms[i] = `P${j+1}`;
+          }
+        }
+      }
+      console.log(tempRooms);
+      setRoomById(tempRooms);
+
+
+    }
+
     //dates
     const currentDate = new Date();
     const datesArray = [];
@@ -198,7 +220,7 @@ const SeatBookingScreen = ({navigation, route}) => {
     //hours
     const currentTime = new Date();
     const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-    const hoursArray = scheduleHours.filter((time) => time > currentMinutes);
+    const hoursArray = selectedDate == 0 ? scheduleHours.filter((time) => time > currentMinutes) : scheduleHours;
     const formattedHours = hoursArray.map((minutes) => {
       const hours = Math.floor(minutes / 60);
       const mins = minutes % 60;
@@ -207,7 +229,9 @@ const SeatBookingScreen = ({navigation, route}) => {
 
     setDates(datesArray);
     setHours(formattedHours);
-  }, []);
+
+    fetchData();
+  }, [selectedDate, selectedHour]);
 
   return (
     <ScrollView style={styles.container}>
@@ -230,8 +254,15 @@ const SeatBookingScreen = ({navigation, route}) => {
               </BlurView>
             </View>
 
-            <View style={{flex: 1, justifyContent: 'flex-end', alignItems: 'center'}}>
-              <Text style={{...styles.text, color: 'gray'}}>screen this side</Text>
+            <View style={{flex: 1, justifyContent: 'space-between', alignItems: 'flex-end', flexDirection: 'row'}}>
+              <View></View>
+              <View style={{paddingLeft: 20}}>
+                <Text style={{...styles.text, color: 'gray'}}>screen this side</Text>
+              </View>
+              <View style={{paddingRight: 10, alignItems: 'center'}}>
+                <Text style={{...styles.text, color: 'gray'}}>Hall</Text>
+                <Text style={styles.text}>{roomById[selectedHour]}</Text>
+              </View>
             </View>
 
             </LinearGradient>

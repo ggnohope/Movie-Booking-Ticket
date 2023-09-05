@@ -2,7 +2,10 @@ import React, {useEffect, useRef, useState} from 'react';
 import { Text, View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator, ScrollView, StatusBar, FlatList,} from 'react-native';
 import { getUpcomingMoviesList, getNowPlayingMoviesList, getPopularMoviesList, baseImagePath, getGenresList, genres, } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
-import { getCurrNowPlayingMoviesList, setCurrNowPlayingMoviesList } from '../data/data';
+import { getCurrNowShowingMoviesList, setCurrNowShowingMoviesList } from '../data/data';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FIRESTORE_DB } from '../../firebaseConfig';
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 import Carousel from 'react-native-snap-carousel';
 import PopularMovieCard from '../components/PopularMovieCard';
@@ -12,20 +15,79 @@ import MovieCard from '../components/MovieCard';
 const {width, height} = Dimensions.get('window');
 
 const HomeScreen = ({navigation}) => {
-  const [nowPlayingMoviesList, setNowPlayingMoviesList] = useState(null);
+  const insets = useSafeAreaInsets();
+
+  const [nowShowingMoviesList, setNowShowingMoviesList] = useState(null);
   const [popularMoviesList, setPopularMoviesList] = useState(null);
   const [upcomingMoviesList, setUpcomingMoviesList] = useState(null);
   const [genresList, setGenresList] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loaded, setLoaded] = useState(true);
 
+  const schedules = ['07:30', '10:30', '13:30', '16:30', '19:30', '22:30'];
+
   useEffect(() => {
+    async function createSchedule() {
+      const colRef = collection(FIRESTORE_DB, 'schedule');
+      const idNowShowingMoviesList = getCurrNowShowingMoviesList().map(movie => movie.id.toString());
+
+      try {
+        const querySnapshot = await getDocs(colRef);
+        if (querySnapshot.empty) {
+          getCurrNowShowingMoviesList().forEach(async (movie, index) => {
+            const lichChieu = { P1: null, P2: null, P3: null, P4: null, P5: null, P6: null };
+            const keys = Object.keys(lichChieu);
+
+            for (let i = 0; i < keys.length; i++) {
+              const key = keys[i];
+              lichChieu[key] = schedules[(i + index) % schedules.length];
+            }
+
+            const docRef = doc(colRef, movie.id.toString());
+            await setDoc(docRef, lichChieu);
+          });
+        }
+        else {
+          let idQuerySnapshotList = querySnapshot.docs.map(doc => doc.id);
+          console.log('QueryList:', idQuerySnapshotList);
+          console.log('NowShowingList:', idNowShowingMoviesList);
+          querySnapshot.docs.forEach(async (document) => {
+            if (!idNowShowingMoviesList.includes(document.id)) {
+              const tempId = document.id;
+              const tempData = document.data();
+
+              let newId = "";
+              for (let i = 0; i < idNowShowingMoviesList.length; ++i) {
+                if (!idQuerySnapshotList.includes(idNowShowingMoviesList[i])) newId = idNowShowingMoviesList[i];
+              }
+
+              idQuerySnapshotList = idQuerySnapshotList.map((id) => {
+                if (id == tempId) return newId;
+                return id;
+              })
+
+              console.log('Delete id:', tempId);
+              console.log('Add id:', newId);
+
+              await deleteDoc(doc(colRef, tempId));
+
+              const docRef = doc(colRef, newId);
+              await setDoc(docRef, tempData);
+            }
+          });
+        }
+        
+      } catch(error) {
+        console.error('Error in createSchedule: ', error);
+      };
+    }
+
     async function fetchData() {
       setLoaded(false);
 
       let nowPlaying = await getNowPlayingMoviesList();
-      setNowPlayingMoviesList(nowPlaying.results);
-      setCurrNowPlayingMoviesList(nowPlaying.results);
+      setNowShowingMoviesList(nowPlaying.results.slice(0, 6));
+      setCurrNowShowingMoviesList(nowPlaying.results.slice(0, 6));
 
       let popular = await getPopularMoviesList();
       setPopularMoviesList(popular.results);
@@ -36,11 +98,11 @@ const HomeScreen = ({navigation}) => {
       let genres = await getGenresList();
       setGenresList([{"id": 1, "name": "All"}, ...genres.genres]);
 
-      setLoaded(true);
+      await createSchedule();
     }
 
+    if (getCurrNowShowingMoviesList() == null) fetchData();
     setLoaded(true);
-    if (getCurrNowPlayingMoviesList() == null) fetchData();
   }, []);
 
   const pressGenreHandler = (index) => {
@@ -50,9 +112,9 @@ const HomeScreen = ({navigation}) => {
 
     if (index != 0){
       const genreId = genresList[index].id;
-      setNowPlayingMoviesList(getCurrNowPlayingMoviesList().filter(movie => movie.genre_ids.includes(genreId)));
+      setNowShowingMoviesList(getCurrNowShowingMoviesList().filter(movie => movie.genre_ids.includes(genreId)));
     }
-    else setNowPlayingMoviesList(getCurrNowPlayingMoviesList());
+    else setNowShowingMoviesList(getCurrNowShowingMoviesList());
 
     setLoaded(true);
   }
@@ -60,7 +122,7 @@ const HomeScreen = ({navigation}) => {
   if (!loaded) {
     return (
       <ScrollView
-        style={styles.container}
+        style={{...styles.container, paddingTop: insets.top}}
         bounces={false}
         contentContainerStyle={styles.scrollViewContainer}>
         <StatusBar hidden />
@@ -73,7 +135,7 @@ const HomeScreen = ({navigation}) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={{...styles.container, paddingTop: insets.top}}>
       <StatusBar hidden />
 
       <View style={styles.HeaderContainer}>
@@ -81,7 +143,6 @@ const HomeScreen = ({navigation}) => {
             <Text style={{...styles.text, paddingHorizontal: 0, paddingVertical: 10}}>Welcome, Hoa Lam</Text>
             {/* <Text style={styles.title}>{getCurrUser().name}</Text> */}
         </View>
-        {/* <SearchBar searchFunction={searchMoviesFunction} /> */}
       </View>
 
       <View style={styles.genresSection}>
@@ -102,7 +163,7 @@ const HomeScreen = ({navigation}) => {
       </View>
       <Text style={styles.text}>Now Showing</Text>
       <Carousel
-        data={nowPlayingMoviesList}
+        data={nowShowingMoviesList}
         renderItem={({item, index})=> {
           return (
             <MovieCard
@@ -124,7 +185,6 @@ const HomeScreen = ({navigation}) => {
         inactiveSlideOpacity={0.6}
         sliderWidth={width}
         itemWidth={width*0.8}
-        // slideStyle={{display: 'flex', alignItems: 'center'}}
       />
       <Text style={styles.text}>Popular</Text>
       <FlatList
