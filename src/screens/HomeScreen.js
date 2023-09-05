@@ -28,7 +28,7 @@ const HomeScreen = ({navigation}) => {
 
   useEffect(() => {
     async function createSchedule() {
-      const colRef = collection(FIRESTORE_DB, 'schedule');
+      const colRef = collection(FIRESTORE_DB, 'Schedule');
       const idNowShowingMoviesList = getCurrNowShowingMoviesList().map(movie => movie.id.toString());
 
       try {

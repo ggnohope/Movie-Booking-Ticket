@@ -1,4 +1,4 @@
-import { Dimensions, TouchableOpacity, ImageBackground, StatusBar, ScrollView, StyleSheet, Text, View, FlatList } from 'react-native'
+import { ActivityIndicator, TouchableOpacity, ImageBackground, StatusBar, ScrollView, StyleSheet, Text, View, FlatList } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -9,26 +9,15 @@ import { FIRESTORE_DB } from '../../firebaseConfig';
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
 
-const initializeSeatDetails = () => {
-  const seatDetails = [];
-  for (let i = 0; i < 9; ++i) {
-    const row = [];
-    for (let j = 0; j < 12; ++j) {
-      row.push('available');
-    }
-    seatDetails.push(row);
-  }
-  return seatDetails;
-};
-
 const SeatBookingScreen = ({navigation, route}) => {
-  const [seatDetails, setSeatDetails] = useState(initializeSeatDetails());
+  const [seatDetails, setSeatDetails] = useState(null);
   const [dates, setDates] = useState([]);
   const [hours, setHours] = useState([]);
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedHour, setSelectedHour] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [roomById, setRoomById] = useState([]); // 0: room of 7h30, 1: room of 10h30...
+  const [hallById, setHallById] = useState([]); // 0: hall of 7h30, 1: hall of 10h30...
+  const [loaded, setLoaded] = useState(false);
 
   const arrayCol = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   const arrayRow = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
@@ -56,6 +45,32 @@ const SeatBookingScreen = ({navigation, route}) => {
     }
 
     setSeatDetails(updatedSeatDetails);
+  }
+
+  const handlePressBuyTickets = async () => {
+    if (totalPrice > 0) {
+      const selectedSeats = [];
+      const tempSeatDetails = [...seatDetails];
+      for (var i = 0; i < seatDetails.length; i++) {
+        for (var j = 0; j < seatDetails[i].length; j++) {
+          if (tempSeatDetails[i][j] == 'selected') {
+            var rowLabel = String.fromCharCode(65 + i);
+            var seatNumber = j + 1;
+            selectedSeats.push(rowLabel + seatNumber);
+            tempSeatDetails[i][j] = 'taken';
+          }
+        }
+      } 
+      const seatsArray = { A: null, B: null, C: null, D: null, E: null, F: null, G: null, H: null, I: null };
+      const keys = Object.keys(seatsArray);
+
+      for (let i = 0; i < keys.length; i++) {
+        seatsArray[keys[i]] = tempSeatDetails[i];
+      }
+      const docRef = doc(FIRESTORE_DB, 'Cinema', dates[selectedDate] + '-' + hours[selectedHour] + '-' + hallById[selectedHour]);
+      await setDoc(docRef, seatsArray);
+
+    }
   }
 
   const renderSeats = () => {
@@ -162,7 +177,7 @@ const SeatBookingScreen = ({navigation, route}) => {
         {
           dates.map((date, index) => (
             <TouchableOpacity onPress={() => setSelectedDate(index)} style={{ alignItems: 'center', justifyContent:'center', padding: 10, width: 60, height: 80, borderRadius: 25, backgroundColor: index != selectedDate ? '#0b0b0b' : Colors.mainColor}}>
-              <Text style={{...styles.text, fontSize: 16}}>{date}</Text>
+              <Text style={{...styles.text, fontSize: 16}}>{date.slice(0, 6)}</Text>
             </TouchableOpacity>
           ))
         }
@@ -184,55 +199,124 @@ const SeatBookingScreen = ({navigation, route}) => {
     )
   }
 
+  const initializeSeats = () => {
+    const seatDetails = [];
+    for (let i = 0; i < 9; ++i) {
+      const row = [];
+      for (let j = 0; j < 12; ++j) {
+        row.push('available');
+      }
+      seatDetails.push(row);
+    }
+    return seatDetails;
+  };
+
   useEffect(() => {
-    //fetch data
-    async function fetchData() {
-      const docRef = doc(FIRESTORE_DB, 'schedule', route.params.movieDetails.id.toString());
+    setLoaded(false);
+
+    const fetchDates = () => {
+      const currentDate = new Date();
+      const datesArray = [];
+      for (let i = 0; i < 5; i++) {
+        const date = new Date(currentDate);
+        date.setDate(currentDate.getDate() + i);
+
+        const dayOfWeek = dayOfWeekNames[date.getDay()];
+        datesArray.push(`${date.getDate().toString().padStart(2, '0')} ${dayOfWeek} ${date.getMonth().toString().padStart(2, '0')} ${date.getFullYear().toString()}`);
+      }
+      setDates(datesArray);
+      return datesArray;
+    }
+    const fetchHours = () => {
+      const currentTime = new Date();
+      const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+      const hoursArray = selectedDate == 0 ? scheduleHours.filter((time) => time > currentMinutes) : scheduleHours;
+      const formattedHours = hoursArray.map((minutes) => {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+      });
+
+      setHours(formattedHours);
+      return formattedHours;
+    }
+    const fetchHalls = async () => {
+      const docRef = doc(FIRESTORE_DB, 'Schedule', route.params.movieDetails.id.toString());
       const docSnapshot = await getDoc(docRef);
 
-      console.log(docSnapshot.id, docSnapshot.data());
-
       const tempHours = ['07:30', '10:30', '13:30', '16:30', '19:30', '22:30'];
-      let tempRooms = [];
+      let tempHalls = [];
       for (let i = 0; i < 6; ++i) {
         for (let j = 0; j < 6; ++j) {
           if (docSnapshot.get(`P${j+1}`) == tempHours[i]) {
-            tempRooms[i] = `P${j+1}`;
+            tempHalls[i] = `P${j+1}`;
           }
         }
       }
-      console.log(tempRooms);
-      setRoomById(tempRooms);
-
-
+      setHallById(tempHalls);
+      return tempHalls;
     }
+    async function fetchSeats(datesArray, hoursArray, hallsArray) {
+      const docRef = doc(FIRESTORE_DB, 'Cinema', datesArray[selectedDate] + '-' + hoursArray[selectedHour] + '-' + hallsArray[selectedHour]);
+      const docSnapshot = await getDoc(docRef);
 
-    //dates
-    const currentDate = new Date();
-    const datesArray = [];
-    for (let i = 0; i < 5; i++) {
-      const date = new Date(currentDate);
-      date.setDate(currentDate.getDate() + i);
+      if (!docSnapshot.exists()) {
+        const seatsArray = { A: null, B: null, C: null, D: null, E: null, F: null, G: null, H: null, I: null };
+        const keys = Object.keys(seatsArray);
 
-      const dayOfWeek = dayOfWeekNames[date.getDay()]; // Lấy ngày trong tuần dưới dạng "SUN", "MON", vv.
-      datesArray.push(`${date.getDate().toString().padStart(2, '0')} ${dayOfWeek}`);
+        for (let i = 0; i < keys.length; i++) {
+          const row = [];
+          for (let j = 0; j < 12; ++j) {
+            row.push('available');
+          }
+          seatsArray[keys[i]] = row;
+        }
+
+        await setDoc(docRef, seatsArray);
+        setSeatDetails(initializeSeats());
+      }
+      else {
+        const keys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+        const seatsArray = [];
+        for (let i = 0; i < 9; ++i) {
+          seatsArray.push(docSnapshot.get(keys[i]));
+        }
+        setSeatDetails(seatsArray);
+      }
     }
-    //hours
-    const currentTime = new Date();
-    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-    const hoursArray = selectedDate == 0 ? scheduleHours.filter((time) => time > currentMinutes) : scheduleHours;
-    const formattedHours = hoursArray.map((minutes) => {
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-    });
-
-    setDates(datesArray);
-    setHours(formattedHours);
-
+    async function fetchData() {
+      try {
+        const datesArray = fetchDates();
+        const hoursArray = fetchHours();
+        const hallsArray = await fetchHalls();
+        if (hoursArray.length != 0) await fetchSeats(datesArray, hoursArray, hallsArray);
+      }
+      catch (error) {
+        console.log('Error in fetchData:', error);
+      }
+      finally {
+        setLoaded(true);
+      }
+    }
+    
+    
     fetchData();
   }, [selectedDate, selectedHour]);
 
+  if (!loaded) {
+    return (
+      <ScrollView
+        style={styles.container}
+        bounces={false}
+        contentContainerStyle={styles.scrollViewContainer}>
+        <StatusBar hidden />
+
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size={'large'} color={Colors.mainColor} />
+        </View>
+      </ScrollView>
+    );
+  }
   return (
     <ScrollView style={styles.container}>
       <StatusBar hidden />
@@ -256,13 +340,16 @@ const SeatBookingScreen = ({navigation, route}) => {
 
             <View style={{flex: 1, justifyContent: 'space-between', alignItems: 'flex-end', flexDirection: 'row'}}>
               <View></View>
-              <View style={{paddingLeft: 20}}>
+              <View style={hours.length != 0 ? {paddingLeft: 20} : {}}>
                 <Text style={{...styles.text, color: 'gray'}}>screen this side</Text>
               </View>
-              <View style={{paddingRight: 10, alignItems: 'center'}}>
-                <Text style={{...styles.text, color: 'gray'}}>Hall</Text>
-                <Text style={styles.text}>{roomById[selectedHour]}</Text>
-              </View>
+              {hours.length != 0 ?
+                <View style={{paddingRight: 10, alignItems: 'center'}}>
+                  <Text style={{...styles.text, color: 'gray'}}>Hall</Text>
+                  <Text style={styles.text}>{hallById[selectedHour]}</Text>
+                </View> :
+                <View></View>
+              }
             </View>
 
             </LinearGradient>
@@ -299,7 +386,7 @@ const SeatBookingScreen = ({navigation, route}) => {
           <Text style={{...styles.text, fontSize: 20}}>$ {(totalPrice).toFixed(2)}</Text>
         </View>
 
-        <TouchableOpacity style={{borderRadius: 25, backgroundColor: Colors.mainColor, paddingVertical: 10, paddingHorizontal: 20}}>
+        <TouchableOpacity onPress={() => handlePressBuyTickets()} style={{borderRadius: 25, backgroundColor: Colors.mainColor, paddingVertical: 10, paddingHorizontal: 20}}>
           <Text style={styles.text}>Buy Tickets</Text>
         </TouchableOpacity>
       </View>
