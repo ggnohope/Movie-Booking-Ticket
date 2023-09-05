@@ -73,7 +73,7 @@ const SignUpScreen = ({navigation}) => {
             <View style={styles.container}>
                 <KeyboardAvoidingView behavior='padding'>
                     <View style={{alignItems: 'center'}}>
-                        <Image source={require('../../assets/logo.jpg')} style={{width: width/3, height: width/3}}/>
+                        <Image source={require('../../assets/logo.png')} style={{width: width/3, height: width/3}}/>
                     </View>
                     <View>
                         
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         padding: 20,
         flex: 1,
-        backgroundColor: 'white'
+        backgroundColor: Colors.backgroundColor
     },
     input: {
         marginVertical: 4,

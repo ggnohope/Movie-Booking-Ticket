@@ -187,7 +187,7 @@ const SeatBookingScreen = ({navigation, route}) => {
   useEffect(() => {
     //fetch data
     async function fetchData() {
-      const docRef = doc(FIRESTORE_DB, 'schedule', route.params.movieDetails.id.toString());
+      const docRef = doc(FIRESTORE_DB, 'Schedule', route.params.movieDetails.id.toString());
       const docSnapshot = await getDoc(docRef);
 
       console.log(docSnapshot.id, docSnapshot.data());
