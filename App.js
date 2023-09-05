@@ -1,5 +1,5 @@
-import {NavigationContainer} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useState, useEffect } from 'react';
 import { View, StatusBar, ActivityIndicator } from 'react-native';
 import { Colors } from './assets/theme';
@@ -8,7 +8,7 @@ import * as Font from 'expo-font';
 import TabNavigator from './src/navigators/TabNavigator';
 import MovieDetailsScreen from './src/screens/MovieDetailsScreen';
 import SeatBookingScreen from './src/screens/SeatBookingScreen';
-// import LoginNavigator from './src/navigations/LoginNavigator';
+import LoginNavigator from './src/navigators/LoginNavigator';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,33 +34,39 @@ const App = () => {
   }, []);
 
   if (!appIsReady) return (
-    <View style={{flex: 1, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center'}}>
+    <View style={{ flex: 1, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
       <StatusBar style="auto" />
-      <ActivityIndicator size={'large'} color={Colors.mainColor}/>
+      <ActivityIndicator size={'large'} color={Colors.mainColor} />
     </View>
   )
   else
-  return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{headerShown: false}}>
-        <Stack.Screen
-          name="Tab"
-          component={TabNavigator}
-          options={{animation: 'default'}}
-        />
-        <Stack.Screen
-          name="MovieDetails"
-          component={MovieDetailsScreen}
-          options={{animation: 'slide_from_right'}}
-        />
-        <Stack.Screen
-          name="SeatBooking"
-          component={SeatBookingScreen}
-          options={{animation: 'slide_from_bottom'}}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
+    return (
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!user ?
+            <Stack.Screen name='LoginNavigator'>
+              {() => <LoginNavigator
+                setUser={setUser}
+              />}
+            </Stack.Screen> :
+            (<Stack.Screen
+              name="Tab"
+              component={TabNavigator}
+              options={{ animation: 'default' }}
+            />)}
+          <Stack.Screen
+            name="MovieDetails"
+            component={MovieDetailsScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="SeatBooking"
+            component={SeatBookingScreen}
+            options={{ animation: 'slide_from_bottom' }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
 };
 
 export default App;

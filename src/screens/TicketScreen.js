@@ -3,41 +3,15 @@ import { Text, View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator
 import { getNowPlayingMoviesList, baseImagePath } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
 import Carousel from 'react-native-snap-carousel';
-import { getCurrNowPlayingMoviesList, setCurrNowPlayingMoviesList, TicketBooked } from '../data/data';
+import { TicketBooked } from '../data/data';
 import TicketCard from '../components/TicketCard';
+import LoginScreen from '../screens/LoginScreen';
+import LoginNavigator from '../navigators/LoginNavigator'
+
 const { width, height } = Dimensions.get('window');
 
 const TicketScreen = () => {
-  const [nowPlayingMoviesList, setNowPlayingMoviesList] = useState(null);
-  const [loaded, setLoaded] = useState(true);
-  useEffect(() => {
-    async function fetchData() {
-      setLoaded(false);
 
-      let nowPlaying = await getNowPlayingMoviesList();
-      setNowPlayingMoviesList(nowPlaying.results);
-      setCurrNowPlayingMoviesList(nowPlaying.results);
-      setLoaded(true);
-    }
-
-    setLoaded(true);
-    if (getCurrNowPlayingMoviesList() == null) fetchData();
-  }, []);
-
-  if (!loaded) {
-    return (
-      <ScrollView
-        style={styles.container}
-        bounces={false}
-        contentContainerStyle={styles.scrollViewContainer}>
-        <StatusBar hidden />
-
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size={'large'} color={Colors.mainColor} />
-        </View>
-      </ScrollView>
-    );
-  }
   return (
     <View style={styles.container}>
       <View style={styles.titleSection}>
