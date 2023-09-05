@@ -8,7 +8,7 @@ import * as Font from 'expo-font';
 import TabNavigator from './src/navigators/TabNavigator';
 import MovieDetailsScreen from './src/screens/MovieDetailsScreen';
 import SeatBookingScreen from './src/screens/SeatBookingScreen';
-import LoginNavigator from './src/navigations/LoginNavigator';
+// import LoginNavigator from './src/navigations/LoginNavigator';
 
 const Stack = createNativeStackNavigator();
 
