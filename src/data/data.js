@@ -19,6 +19,7 @@ export const user = [{
     phone: '84 982123423',
     email: 'tphung21@gmail.com',
     address: '325 Nguyen Duc Manh',
+    balance: 192000,
 }]
 
 export const TicketBooked = [

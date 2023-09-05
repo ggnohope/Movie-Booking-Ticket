@@ -17,11 +17,13 @@ const UserAccountScreen = () => {
   const [modalPhone, setModalPhone] = useState(false);
   const [modalEmail, setModalEmail] = useState(false);
   const [modalAddress, setModalAddress] = useState(false);
+  const [modalBalance, setModalBalance] = useState(false);
 
   const [name, setName] = useState(user.name);
   const [phone, setPhone] = useState(user.phone);
   const [email, setEmail] = useState(user.email);
   const [address, setAddress] = useState(user.address);
+  const [balance, setBalance] = useState(user.balance);
   const [loading, setLoading] = useState(true);
 
   const handlePressCloseName = () => {
@@ -56,6 +58,15 @@ const UserAccountScreen = () => {
   const handlePressSaveAddress = async () => {
     CurrUser.address = address
     setModalAddress(!modalAddress);
+  }
+
+  const handlePressCloseBalance = () => {
+    setBalance(user.balance);
+    setModalBalance(!modalBalance);
+  }
+  const handlePressSaveBalance = async () => {
+    CurrUser.balance = balance
+    setModalBalance(!modalBalance);
   }
 
   if (!loading) return (
@@ -215,6 +226,42 @@ const UserAccountScreen = () => {
         </TouchableWithoutFeedback>
       </Modal>
 
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalBalance}
+        onRequestClose={() => {
+          setModalBalance(!modalBalance);
+        }}>
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <Text style={{ ...styles.title, fontSize: 20, }}>Change your Balance:</Text>
+              <TextInput
+                style={styles.textInput}
+                onChangeText={(balance) => setBalance(balance)}
+                defaultValue={CurrUser.balance}
+                editable={true}
+                maxLength={50}
+                textAlign='center'
+              />
+              <View style={{ flexDirection: 'row', gap: 20, paddingTop: 50 }}>
+                <TouchableOpacity
+                  style={[styles.button, styles.buttonClose]}
+                  onPress={() => handlePressCloseBalance()}>
+                  <Text style={{ ...styles.title, fontSize: 20, color: Colors.mainColor }}>Close</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.buttonSave]}
+                  onPress={() => handlePressSaveBalance()}>
+                  <Text style={{ ...styles.title, fontSize: 20, color: 'white' }}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
 
       <View style={styles.infoSection}>
         <View style={styles.rowInfo}>
@@ -262,6 +309,18 @@ const UserAccountScreen = () => {
             <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user[0].address}</Text>
           </View>
           <TouchableOpacity onPress={() => setModalAddress(!modalAddress)} style={styles.editIcon}>
+            <AntDesign name="edit" size={24} color={Colors.mainColor} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.rowInfo}>
+          <View style={styles.icon}>
+            <Feather name="dollar-sign" size={24} color={Colors.mainColor} />
+          </View>
+          <View style={styles.info}>
+            <Text style={styles.details}>Balance</Text>
+            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user[0].balance}</Text>
+          </View>
+          <TouchableOpacity onPress={() => setModalBalance(!modalBalance)} style={styles.editIcon}>
             <AntDesign name="edit" size={24} color={Colors.mainColor} />
           </TouchableOpacity>
         </View>
