@@ -1,16 +1,9 @@
 import {Text, View, StyleSheet, TouchableOpacity, Image, ActivityIndicator} from 'react-native';
-import { getGenresList } from '../api/apicalls';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { getCurrGenresList } from '../data/data';
 
 const ComingSoonMovieCard = (props) => {
-  const [genreslList, setGenreslList] = useState(null);
-  
-  useEffect(() => {
-    (async () => {
-      let genres = await getGenresList();
-      setGenreslList(genres.genres);
-    })();
-  }, []);
+  const [genreslList, setGenreslList] = useState(getCurrGenresList());
   
   const renderGenres = (genreIDs) => {
     if (genreslList == null) {

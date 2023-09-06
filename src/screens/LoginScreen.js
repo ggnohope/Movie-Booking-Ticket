@@ -43,7 +43,7 @@ const LoginScreen = (props) => {
         try {
             const response = await signInWithEmailAndPassword(auth, email, password);
             if(response.user) {
-                createAlert(1);
+                // createAlert(1);
                 const docRef = doc(FIRESTORE_DB, 'User', response.user.uid);
                 const user = await getDoc(docRef);
                 console.log(user.data());

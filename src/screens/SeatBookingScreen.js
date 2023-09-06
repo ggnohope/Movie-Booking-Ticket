@@ -6,8 +6,9 @@ import { baseImagePath } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
 import { useEffect } from 'react';
 import { FIRESTORE_DB } from '../../firebaseConfig';
-import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
+import { getCurrUser, setCurrUser } from '../data/data';
 
 const SeatBookingScreen = ({navigation, route}) => {
   const [seatDetails, setSeatDetails] = useState(null);
@@ -48,28 +49,46 @@ const SeatBookingScreen = ({navigation, route}) => {
   }
 
   const handlePressBuyTickets = async () => {
+    setLoaded(false);
+
     if (totalPrice > 0) {
-      const selectedSeats = [];
-      const tempSeatDetails = [...seatDetails];
-      for (var i = 0; i < seatDetails.length; i++) {
-        for (var j = 0; j < seatDetails[i].length; j++) {
-          if (tempSeatDetails[i][j] == 'selected') {
-            var rowLabel = String.fromCharCode(65 + i);
-            var seatNumber = j + 1;
-            selectedSeats.push(rowLabel + seatNumber);
-            tempSeatDetails[i][j] = 'taken';
+      const isSuccess = totalPrice <= getCurrUser().balance;
+      if (isSuccess) {
+        const selectedSeats = [];
+        const tempSeatDetails = [...seatDetails];
+        for (var i = 0; i < seatDetails.length; i++) {
+          for (var j = 0; j < seatDetails[i].length; j++) {
+            if (tempSeatDetails[i][j] == 'selected') {
+              var rowLabel = String.fromCharCode(65 + i);
+              var seatNumber = j + 1;
+              selectedSeats.push(rowLabel + seatNumber);
+              tempSeatDetails[i][j] = 'taken';
+            }
           }
+        } 
+        const seatsArray = { A: null, B: null, C: null, D: null, E: null, F: null, G: null, H: null, I: null };
+        const keys = Object.keys(seatsArray);
+
+        for (let i = 0; i < keys.length; i++) {
+          seatsArray[keys[i]] = tempSeatDetails[i];
         }
-      } 
-      const seatsArray = { A: null, B: null, C: null, D: null, E: null, F: null, G: null, H: null, I: null };
-      const keys = Object.keys(seatsArray);
 
-      for (let i = 0; i < keys.length; i++) {
-        seatsArray[keys[i]] = tempSeatDetails[i];
+        try {
+        const docRef = doc(FIRESTORE_DB, 'Cinema', dates[selectedDate] + '-' + hours[selectedHour] + '-' + hallById[selectedHour]);
+        await setDoc(docRef, seatsArray);
+
+        await updateDoc(doc(FIRESTORE_DB,'User', getCurrUser().id),{
+          balance: getCurrUser().balance - totalPrice
+        });
+        setCurrUser({...getCurrUser(),
+          balance: getCurrUser().balance - totalPrice
+        })
+        } catch(error) {
+          console.log('Error in handlePressBuyTickets:', error);
+        } finally {
+          setLoaded(true);
+        }
       }
-      const docRef = doc(FIRESTORE_DB, 'Cinema', dates[selectedDate] + '-' + hours[selectedHour] + '-' + hallById[selectedHour]);
-      await setDoc(docRef, seatsArray);
-
     }
   }
 
@@ -395,7 +414,7 @@ const SeatBookingScreen = ({navigation, route}) => {
   )
 }
 
-export default SeatBookingScreen
+export default SeatBookingScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -430,4 +449,4 @@ const styles = StyleSheet.create({
     color: Colors.textColor,
     fontFamily: 'nunito-bold',
   },
-})
+});

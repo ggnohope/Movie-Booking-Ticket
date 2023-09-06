@@ -1,18 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Dimensions, Modal, StyleSheet, Text, View, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import { getUpcomingMoviesList, getNowPlayingMoviesList, getPopularMoviesList, baseImagePath, getGenresList, genres, } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
-import { getCurrNowPlayingMoviesList, setCurrNowPlayingMoviesList, getCurrUser, setCurrUser } from '../data/data';
-import { AntDesign, Ionicons, FontAwesome, MaterialIcons, Feather } from '@expo/vector-icons';
-import { user } from '../data/data';
+import { AntDesign, Feather } from '@expo/vector-icons';
+import { getCurrUser, setCurrUser } from '../data/data';
+import { FIRESTORE_DB } from '../../firebaseConfig';
+import { updateDoc, doc } from 'firebase/firestore';
 
 
 const {width, height} = Dimensions.get('window');
 
 const UserAccountScreen = () => {
-
-  // const [user, setUser] = useState(getCurrUser());
-  const CurrUser = user[0];
+  const [user, setUser] = useState(getCurrUser());
   const [modalName, setModalName] = useState(false);
   const [modalPhone, setModalPhone] = useState(false);
   const [modalEmail, setModalEmail] = useState(false);
@@ -24,40 +22,85 @@ const UserAccountScreen = () => {
   const [email, setEmail] = useState(user.email);
   const [address, setAddress] = useState(user.address);
   const [balance, setBalance] = useState(user.balance);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const handlePressCloseName = () => {
     setName(user.name);
     setModalName(!modalName);
   }
   const handlePressSaveName = async () => {
-    CurrUser.name = name;
-    setModalName(!modalName);
+    setLoading(true);
+    try {
+      await updateDoc(doc(FIRESTORE_DB,'User', user.id),{
+        name: name
+      });
+      setUser({...user, name: name});
+      setCurrUser({...user, name: name});
+      setModalName(!modalName);
+    } catch(error) {
+      console.log('Error in Save Name:', error);
+    } finally {
+      setLoading(false);
+    }
   }
   const handlePressClosePhone = () => {
     setPhone(user.phone);
     setModalPhone(!modalPhone);
   }
   const handlePressSavePhone = async () => {
-    CurrUser.phone = phone;
-    setModalPhone(!modalPhone);
+    setLoading(true);
+    try {
+      await updateDoc(doc(FIRESTORE_DB,'User', user.id),{
+        phone: phone
+      });
+      setUser({...user, phone: phone});
+      setCurrUser({...user, phone: phone});
+      setModalPhone(!modalPhone);
+    } catch(error) {
+      console.log('Error in Save Phone:', error);
+    } finally {
+      setLoading(false);
+    }
   }
+
   const handlePressCloseEmail = () => {
     setEmail(user.email);
     setModalEmail(!modalEmail);
   }
   const handlePressSaveEmail = async () => {
-    CurrUser.email = email
-    setModalEmail(!modalEmail);
-
+    setLoading(true);
+    try {
+      await updateDoc(doc(FIRESTORE_DB,'User', user.id),{
+        email: email
+      });
+      setUser({...user, email: email});
+      setCurrUser({...user, email: email});
+      setModalEmail(!modalEmail);
+    } catch(error) {
+      console.log('Error in Save Email:', error);
+    } finally {
+      setLoading(false);
+    }
   }
+
   const handlePressCloseAddress = () => {
     setAddress(user.address);
     setModalAddress(!modalAddress);
   }
   const handlePressSaveAddress = async () => {
-    CurrUser.address = address
-    setModalAddress(!modalAddress);
+    setLoading(true);
+    try {
+      await updateDoc(doc(FIRESTORE_DB,'User', user.id),{
+        address: address
+      });
+      setUser({...user, address: address});
+      setCurrUser({...user, address: address});
+      setModalAddress(!modalAddress);
+    } catch(error) {
+      console.log('Error in Save Address:', error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handlePressCloseBalance = () => {
@@ -65,16 +108,26 @@ const UserAccountScreen = () => {
     setModalBalance(!modalBalance);
   }
   const handlePressSaveBalance = async () => {
-    CurrUser.balance = balance
-    setModalBalance(!modalBalance);
+    setLoading(true);
+    try {
+      await updateDoc(doc(FIRESTORE_DB,'User', user.id),{
+        balance: balance
+      });
+      setUser({...user, balance: balance});
+      setCurrUser({...user, balance: balance});
+      setModalBalance(!modalBalance);
+    } catch(error) {
+      console.log('Error in Save Balance:', error);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if (!loading) return (
+  if (loading) return (
     <View style={{...styles.container, justifyContent: 'center', alignItems: 'center'}}>
       <ActivityIndicator size={'large'} color={Colors.mainColor}/>
     </View>
   )
-  else 
   return (
     <View style={styles.container}>
       <View style={styles.titleSection}>
@@ -95,7 +148,7 @@ const UserAccountScreen = () => {
               <TextInput
                 style={styles.textInput}
                 onChangeText={(name) => setName(name)}
-                defaultValue={CurrUser.name}
+                defaultValue={name}
                 editable={true}
                 maxLength={50}
                 textAlign='center'
@@ -131,7 +184,7 @@ const UserAccountScreen = () => {
               <TextInput
                 style={styles.textInput}
                 onChangeText={(phone) => setPhone(phone)}
-                defaultValue={CurrUser.phone}
+                defaultValue={phone}
                 editable={true}
                 maxLength={50}
                 textAlign='center'
@@ -168,7 +221,7 @@ const UserAccountScreen = () => {
               <TextInput
                 style={styles.textInput}
                 onChangeText={(email) => setEmail(email)}
-                defaultValue={CurrUser.email}
+                defaultValue={email}
                 editable={true}
                 maxLength={50}
                 textAlign='center'
@@ -204,7 +257,7 @@ const UserAccountScreen = () => {
               <TextInput
                 style={styles.textInput}
                 onChangeText={(address) => setAddress(address)}
-                defaultValue={CurrUser.address}
+                defaultValue={address}
                 editable={true}
                 maxLength={50}
                 textAlign='center'
@@ -240,10 +293,11 @@ const UserAccountScreen = () => {
               <TextInput
                 style={styles.textInput}
                 onChangeText={(balance) => setBalance(balance)}
-                defaultValue={CurrUser.balance}
+                defaultValue={balance}
                 editable={true}
                 maxLength={50}
                 textAlign='center'
+                keyboardType='numeric'
               />
               <View style={{ flexDirection: 'row', gap: 20, paddingTop: 50 }}>
                 <TouchableOpacity
@@ -270,7 +324,7 @@ const UserAccountScreen = () => {
           </View>
           <View style={styles.info}>
             <Text style={styles.details}>Full name</Text>
-            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user[0].name}</Text>
+            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user.name}</Text>
           </View>
           <TouchableOpacity onPress={() => setModalName(!modalName)} style={styles.editIcon}>
             <AntDesign name="edit" size={24} color={Colors.mainColor} />
@@ -282,7 +336,7 @@ const UserAccountScreen = () => {
           </View>
           <View style={styles.info}>
             <Text style={styles.details}>Phone number</Text>
-            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user[0].phone}</Text>
+            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user.phone}</Text>
           </View>
           <TouchableOpacity onPress={() => setModalPhone(!modalPhone)} style={styles.editIcon}>
             <AntDesign name="edit" size={24} color={Colors.mainColor} />
@@ -294,7 +348,7 @@ const UserAccountScreen = () => {
           </View>
           <View style={styles.info}>
             <Text style={styles.details}>Email</Text>
-            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user[0].email}</Text>
+            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user.email}</Text>
           </View>
           <TouchableOpacity onPress={() => setModalEmail(!modalEmail)} style={styles.editIcon}>
             <AntDesign name="edit" size={24} color={Colors.mainColor} />
@@ -306,7 +360,7 @@ const UserAccountScreen = () => {
           </View>
           <View style={styles.info}>
             <Text style={styles.details}>Address</Text>
-            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user[0].address}</Text>
+            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user.address}</Text>
           </View>
           <TouchableOpacity onPress={() => setModalAddress(!modalAddress)} style={styles.editIcon}>
             <AntDesign name="edit" size={24} color={Colors.mainColor} />
@@ -318,7 +372,7 @@ const UserAccountScreen = () => {
           </View>
           <View style={styles.info}>
             <Text style={styles.details}>Balance</Text>
-            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user[0].balance}</Text>
+            <Text numberOfLines={3} style={{ ...styles.title, fontSize: 20, maxWidth: 250 }}>{user.balance}</Text>
           </View>
           <TouchableOpacity onPress={() => setModalBalance(!modalBalance)} style={styles.editIcon}>
             <AntDesign name="edit" size={24} color={Colors.mainColor} />

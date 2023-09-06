@@ -1,8 +1,8 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { Text, View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator, ScrollView, StatusBar, FlatList,} from 'react-native';
 import { getUpcomingMoviesList, getNowPlayingMoviesList, getPopularMoviesList, baseImagePath, getGenresList, genres, } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
-import { getCurrNowShowingMoviesList, setCurrNowShowingMoviesList } from '../data/data';
+import { getCurrGenresList, getCurrNowShowingMoviesList, getCurrPopularMoviesList, getCurrUpcomingMoviesList, getCurrUser, setCurrGenresList, setCurrNowShowingMoviesList, setCurrPopulargMoviesList, setCurrUpcomingMoviesList } from '../data/data';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FIRESTORE_DB } from '../../firebaseConfig';
 import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
@@ -18,11 +18,8 @@ const HomeScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
 
   const [nowShowingMoviesList, setNowShowingMoviesList] = useState(null);
-  const [popularMoviesList, setPopularMoviesList] = useState(null);
-  const [upcomingMoviesList, setUpcomingMoviesList] = useState(null);
-  const [genresList, setGenresList] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [loaded, setLoaded] = useState(true);
+  const [loaded, setLoaded] = useState(false);
 
   const schedules = ['07:30', '10:30', '13:30', '16:30', '19:30', '22:30'];
 
@@ -78,45 +75,44 @@ const HomeScreen = ({navigation}) => {
         }
         
       } catch(error) {
-        console.error('Error in createSchedule: ', error);
+        console.error('Error in createSchedule:', error);
       };
     }
 
     async function fetchData() {
       setLoaded(false);
+      try {
+        let nowPlaying = await getNowPlayingMoviesList();
+        setNowShowingMoviesList(nowPlaying.results.slice(0, 6));
+        setCurrNowShowingMoviesList(nowPlaying.results.slice(0, 6));
 
-      let nowPlaying = await getNowPlayingMoviesList();
-      setNowShowingMoviesList(nowPlaying.results.slice(0, 6));
-      setCurrNowShowingMoviesList(nowPlaying.results.slice(0, 6));
+        let popular = await getPopularMoviesList();
+        setCurrPopulargMoviesList(popular.results);
 
-      let popular = await getPopularMoviesList();
-      setPopularMoviesList(popular.results);
+        let upcoming = await getUpcomingMoviesList();
+        setCurrUpcomingMoviesList(upcoming.results);
 
-      let upcoming = await getUpcomingMoviesList();
-      setUpcomingMoviesList(upcoming.results);
+        let genres = await getGenresList();
+        setCurrGenresList([{"id": 1, "name": "All"}, ...genres.genres]);
 
-      let genres = await getGenresList();
-      setGenresList([{"id": 1, "name": "All"}, ...genres.genres]);
-
-      await createSchedule();
+        await createSchedule();
+      } catch(error) {
+        console.log('Error in FetchData HomeScreen:', error);
+      } finally {
+        setLoaded(true);
+      }
     }
 
-    if (getCurrNowShowingMoviesList() == null) fetchData();
-    setLoaded(true);
+    fetchData();
   }, []);
 
   const pressGenreHandler = (index) => {
-    setLoaded(false);
-
     setSelectedIndex(index);
-
     if (index != 0){
-      const genreId = genresList[index].id;
+      const genreId = getCurrGenresList()[index].id;
       setNowShowingMoviesList(getCurrNowShowingMoviesList().filter(movie => movie.genre_ids.includes(genreId)));
     }
     else setNowShowingMoviesList(getCurrNowShowingMoviesList());
-
-    setLoaded(true);
   }
 
   if (!loaded) {
@@ -140,14 +136,14 @@ const HomeScreen = ({navigation}) => {
 
       <View style={styles.HeaderContainer}>
         <View style={styles.leftHeader}>
-            <Text style={{...styles.text, paddingHorizontal: 0, paddingVertical: 10}}>Welcome, Hoa Lam</Text>
+            <Text style={{...styles.text, paddingHorizontal: 0, paddingVertical: 10}}>Welcome, {getCurrUser().name}</Text>
             {/* <Text style={styles.title}>{getCurrUser().name}</Text> */}
         </View>
       </View>
 
       <View style={styles.genresSection}>
         <FlatList
-          data={genresList}
+          data={getCurrGenresList()}
           keyExtractor={(item) => item.id}
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -176,7 +172,7 @@ const HomeScreen = ({navigation}) => {
               voteCount={item.vote_count}
               genres={item.genre_ids}
               imagePath={baseImagePath('w780', item.poster_path)}
-              genresList={genresList}
+              genresList={getCurrGenresList()}
             />
           )
         }}
@@ -188,7 +184,7 @@ const HomeScreen = ({navigation}) => {
       />
       <Text style={styles.text}>Popular</Text>
       <FlatList
-        data={popularMoviesList}
+        data={getCurrPopularMoviesList()}
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -203,7 +199,7 @@ const HomeScreen = ({navigation}) => {
             }}
             cardWidth={width / 3}
             isFirst={index == 0 ? true : false}
-            isLast={index == popularMoviesList.length - 1 ? true : false}
+            isLast={index == getCurrPopularMoviesList().length - 1 ? true : false}
             title={item.original_title}
             imagePath={baseImagePath('w342', item.poster_path)}
             isHorizontal={true}
@@ -212,7 +208,7 @@ const HomeScreen = ({navigation}) => {
       />
       <Text style={styles.text}>Coming Soon</Text>
       <FlatList
-        data={upcomingMoviesList}
+        data={getCurrUpcomingMoviesList()}
         keyExtractor={(item) => item.id}
         horizontal
         bounces={false}
@@ -226,7 +222,7 @@ const HomeScreen = ({navigation}) => {
             }}
             cardWidth={width - 36*2}
             isFirst={index == 0 ? true : false}
-            isLast={index == upcomingMoviesList.length - 1 ? true : false}
+            isLast={index == getCurrUpcomingMoviesList().length - 1 ? true : false}
             title={item.original_title}
             genres={item.genre_ids}
             imagePath={baseImagePath('w342', item.poster_path)}
