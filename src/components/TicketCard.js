@@ -1,136 +1,174 @@
 import React, { useState, useEffect } from 'react';
-import { TouchableWithoutFeedback, Text, View, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { Text, View, StyleSheet, Image, ImageBackground } from 'react-native';
 import { getGenresList } from '../api/apicalls';
-import { AntDesign, EvilIcons } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 import { Colors } from '../../assets/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 
 const TicketCard = (props) => {
-  function getMonthName(monthNumber) {
-    const date = new Date();
-    date.setMonth(monthNumber - 1);
-
-    return date.toLocaleString('en-US', {
-      month: 'long',
-    });
-  }
-
-
   return (
     <View style={[
       styles.container,
       { maxWidth: props.cardWidth },
     ]}>
-      <Image
-        style={[styles.cardImage, { width: props.cardWidth }]}
-        source={{ uri: props.imagePath }}
-      />
-      <View style={styles.detailContainer}>
-        <View style={styles.titleContainer}>
-          <Text numberOfLines={2} style={styles.textTitle}>
-            {props.title}
-          </Text>
-        </View>
-        <View style={[styles.detailDateContainer, {flexDirection: 'row'}]}>
-          <View style={styles.detailDate}>
-            <Text style={styles.textDate}>{getMonthName(props.date.getMonth()).substring(0, 3)}</Text>
-            <Text style={styles.textDate2}>{props.date.getDate()}</Text>
+      <View style={styles.ticketContainer}>
+        <ImageBackground
+          source={{uri: props.ticketData.posterPath}}
+          style={styles.ticketBGImage}>
+          <LinearGradient
+            colors={['rgba(255,85,36,0)', Colors.mainColor]}
+            style={styles.linearGradient}>
+            <View
+              style={[
+                styles.blackCircle,
+                {position: 'absolute', bottom: -50, left: -50},
+              ]}></View>
+            <View
+              style={[
+                styles.blackCircle,
+                {position: 'absolute', bottom: -50, right: -50},
+              ]}></View>
+          </LinearGradient>
+        </ImageBackground>
+        <View style={styles.linear}></View>
+
+        <View style={styles.ticketFooter}>
+          <View
+            style={[
+              styles.blackCircle,
+              {position: 'absolute', top: -50, left: -50},
+            ]}></View>
+          <View
+            style={[
+              styles.blackCircle,
+              {position: 'absolute', top: -50, right: -50},
+            ]}></View>
+          <View style={styles.ticketDateContainer}>
+            <View style={styles.subtitleContainer}>
+              <Text style={styles.dateTitle}>{props.ticketData.date.slice(0, 3)}</Text>
+              <Text style={styles.subtitle}>{props.ticketData.date.slice(3, 6)}</Text>
+            </View>
+            <View style={styles.subtitleContainer}>
+              <AntDesign name="clockcircle" size={24} color={Colors.textColor} />
+              <Text style={styles.subtitle}>{props.ticketData.hour}</Text>
+            </View>
           </View>
-          <View style={[styles.detailTime]}>
-          <EvilIcons style={{paddingBottom: 5}} name="clock" size={34} color="white" />
-          <Text style={styles.textDate2}>{props.date.getHours() + ':' + props.date.getMinutes()}</Text>
+          <View style={styles.ticketSeatContainer}>
+            <View style={styles.subtitleContainer}>
+              <Text style={styles.subheading}>Cost</Text>
+              <Text style={styles.subtitle}>${props.ticketData.price}</Text>
+            </View>
+            <View style={styles.subtitleContainer}>
+              <Text style={styles.subheading}>Hall</Text>
+              <Text style={styles.subtitle}>{props.ticketData.hall}</Text>
+            </View>
+            <View style={styles.subtitleContainer}>
+              {
+                props.ticketData.seats.length == 1 ?
+                <Text style={styles.subheading}>Seat</Text> :
+                <Text style={styles.subheading}>Seats</Text>
+              }
+              <Text style={styles.subtitle}>
+                {props.ticketData.seats
+                  .slice(0, 3)
+                  .map((item, index, arr) => {
+                    return item + (index != arr.length - 1 ? ', ' : props.ticketData.seats.length > 3  ? '...' : '');
+                  })}
+              </Text>
+            </View>
           </View>
-        </View>
-        <View style={styles.detailPositionContainer}>
-          <View style={styles.detailPosition}>
-            <Text style={styles.textDate}>Hall</Text>
-            <Text style={styles.textDate2}>{props.position.hall}</Text>
-          </View>
-          <View style={styles.detailPosition}>
-            <Text style={styles.textDate}>Row</Text>
-            <Text style={styles.textDate2}>{props.position.row}</Text>
-          </View>
-          <View style={styles.detailPosition}>
-            <Text style={styles.textDate}>Seat</Text>
-            <Text style={styles.textDate2}>{props.position.seat}</Text>
-          </View>
-        </View>
-        <View style={styles.detailBarcodeContainer}>
-        <Image
-        style={{width: 250, height: 70}}
-        source={require('../../assets/barcode.png')}
-      />
+          <Image
+            source={require('../../assets/barcode.png')}
+            style={styles.barcodeImage}
+          />
         </View>
       </View>
-
-
     </View>
   );
 };
 
+export default TicketCard;
+
 const styles = StyleSheet.create({
   container: {
-    top: 40,
-    left: 25,
     display: 'flex',
     flex: 1,
     backgroundColor: Colors.backgroundColor,
-    borderRadius: 30,
   },
-  cardImage: {
-    aspectRatio: 2 / 3,
-    borderRadius: 20,
-    // height: 300,
-  },
-  textTitle: {
-    fontFamily: 'nunito-regular',
-    fontSize: 25,
-    color: Colors.textColor,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    paddingBottom: 10,
-  },
-  textDate: {
-    fontFamily: 'nunito-regular',
-    fontSize: 20,
-    color: Colors.textColor,
-    fontWeight: 'bold',
-    paddingBottom: 5,
-  },
-  textDate2: {
-    fontFamily: 'nunito-regular',
-    fontSize: 17,
-    color: Colors.textColor,
-    fontWeight: 'bold',
-    paddingBottom: 5,
-  },
-  detailDateContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  detailDate: {
+  ticketContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  detailTime: {
-    flex: 1,
-    alignItems: 'center',
+  ticketBGImage: {
+    alignSelf: 'center',
+    width: 300,
+    aspectRatio: 200 / 300,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
   },
-  detailPositionContainer: {
+  linearGradient: {
+    height: '70%',
+  },
+  linear: {
+    borderTopColor: Colors.backgroundColor,
+    borderTopWidth: 3,
+    width: 300,
+    alignSelf: 'center',
+    backgroundColor: Colors.mainColor,
+    borderStyle: 'dashed',
+  },
+  ticketFooter: {
+    backgroundColor: Colors.mainColor,
+    width: 300,
+    alignItems: 'center',
+    paddingBottom: 36,
+    alignSelf: 'center',
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+  },
+  ticketDateContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    gap: 36,
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'center',
+    marginVertical: 10,
   },
-  detailPosition: {
+  ticketSeatContainer: {
+    flexDirection: 'row',
+    gap: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+  },
+  dateTitle: {
+    fontFamily: 'nunito-bold',
+    fontSize: 24,
+    color: Colors.textColor,
+  },
+  subtitle: {
+    fontFamily: 'nunito-regular',
+    fontSize: 14,
+    color: Colors.textColor,
+  },
+  subheading: {
+    fontFamily: 'nunito-bold',
+    fontSize: 18,
+    color: Colors.textColor,
+  },
+  subtitleContainer: {
     alignItems: 'center',
   },
-  detailBarcodeContainer: {
-    alignItems: 'center',
+  barcodeImage: {
+    height: 50,
+    aspectRatio: 158 / 52,
+  },
+  blackCircle: {
+    height: 80,
+    width: 80,
+    borderRadius: 80,
+    backgroundColor: Colors.backgroundColor,
   },
 });
-
-export default TicketCard;

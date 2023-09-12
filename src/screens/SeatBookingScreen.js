@@ -6,7 +6,7 @@ import { baseImagePath } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
 import { useEffect } from 'react';
 import { FIRESTORE_DB } from '../../firebaseConfig';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
 import { getCurrUser, setCurrUser } from '../data/data';
 
@@ -49,11 +49,10 @@ const SeatBookingScreen = ({navigation, route}) => {
   }
 
   const handlePressBuyTickets = async () => {
-    setLoaded(false);
-
     if (totalPrice > 0) {
       const isSuccess = totalPrice <= getCurrUser().balance;
       if (isSuccess) {
+        setLoaded(false);
         const selectedSeats = [];
         const tempSeatDetails = [...seatDetails];
         for (var i = 0; i < seatDetails.length; i++) {
@@ -80,15 +79,28 @@ const SeatBookingScreen = ({navigation, route}) => {
         await updateDoc(doc(FIRESTORE_DB,'User', getCurrUser().id),{
           balance: getCurrUser().balance - totalPrice
         });
-        setCurrUser({...getCurrUser(),
-          balance: getCurrUser().balance - totalPrice
-        })
+
+        const colRef = collection(FIRESTORE_DB, getCurrUser().collectionName);
+        await addDoc(colRef, {
+          date: dates[selectedDate],
+          hour: hours[selectedHour],
+          hall: hallById[selectedHour],
+          posterPath: baseImagePath('w780', route.params.movieDetails.poster_path),
+          price: totalPrice,
+          title: route.params.movieDetails.title,
+          seats: selectedSeats,
+        });
+
         } catch(error) {
           console.log('Error in handlePressBuyTickets:', error);
         } finally {
           setLoaded(true);
         }
+        setCurrUser({...getCurrUser(),
+          balance: getCurrUser().balance - totalPrice
+        });
       }
+      navigation.navigate('Order', {isSuccess: isSuccess});
     }
   }
 
@@ -232,6 +244,7 @@ const SeatBookingScreen = ({navigation, route}) => {
 
   useEffect(() => {
     setLoaded(false);
+    setTotalPrice(0);
 
     const fetchDates = () => {
       const currentDate = new Date();
@@ -241,7 +254,7 @@ const SeatBookingScreen = ({navigation, route}) => {
         date.setDate(currentDate.getDate() + i);
 
         const dayOfWeek = dayOfWeekNames[date.getDay()];
-        datesArray.push(`${date.getDate().toString().padStart(2, '0')} ${dayOfWeek} ${date.getMonth().toString().padStart(2, '0')} ${date.getFullYear().toString()}`);
+        datesArray.push(`${date.getDate().toString().padStart(2, '0')} ${dayOfWeek} ${(date.getMonth() + 1).toString().padStart(2, '0')} ${date.getFullYear().toString()}`);
       }
       setDates(datesArray);
       return datesArray;
@@ -259,15 +272,14 @@ const SeatBookingScreen = ({navigation, route}) => {
       setHours(formattedHours);
       return formattedHours;
     }
-    const fetchHalls = async () => {
+    const fetchHalls = async (hoursArray) => {
       const docRef = doc(FIRESTORE_DB, 'Schedule', route.params.movieDetails.id.toString());
       const docSnapshot = await getDoc(docRef);
 
-      const tempHours = ['07:30', '10:30', '13:30', '16:30', '19:30', '22:30'];
       let tempHalls = [];
-      for (let i = 0; i < 6; ++i) {
+      for (let i = 0; i < hoursArray.length; ++i) {
         for (let j = 0; j < 6; ++j) {
-          if (docSnapshot.get(`P${j+1}`) == tempHours[i]) {
+          if (docSnapshot.get(`P${j+1}`) == hoursArray[i]) {
             tempHalls[i] = `P${j+1}`;
           }
         }
@@ -307,11 +319,11 @@ const SeatBookingScreen = ({navigation, route}) => {
       try {
         const datesArray = fetchDates();
         const hoursArray = fetchHours();
-        const hallsArray = await fetchHalls();
+        const hallsArray = await fetchHalls(hoursArray);
         if (hoursArray.length != 0) await fetchSeats(datesArray, hoursArray, hallsArray);
       }
       catch (error) {
-        console.log('Error in fetchData:', error);
+        console.log('Error in fetchData SeatBookingScreen:', error);
       }
       finally {
         setLoaded(true);

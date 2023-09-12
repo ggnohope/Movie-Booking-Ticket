@@ -1,32 +1,82 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Text, View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator, ScrollView, StatusBar, FlatList, Image } from 'react-native';
-import { getNowPlayingMoviesList, baseImagePath } from '../api/apicalls';
+import React, { useEffect, useState } from 'react';
+import { Text, View, StyleSheet, Dimensions, ActivityIndicator, StatusBar } from 'react-native';
 import { Colors } from '../../assets/theme';
 import Carousel from 'react-native-snap-carousel';
-import { TicketBooked } from '../data/data';
+import { getCurrUser } from '../data/data';
 import TicketCard from '../components/TicketCard';
-import LoginScreen from '../screens/LoginScreen';
-import LoginNavigator from '../navigators/LoginNavigator'
+import { collection, getDocs } from 'firebase/firestore';
+import { FIRESTORE_DB } from '../../firebaseConfig';
+import { useIsFocused } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
 const TicketScreen = () => {
+  const [ticketBooked, setTicketBooked] = useState(null);
+  const [loaded, setLoaded] = useState(false);
+  const isFocused = useIsFocused();
 
+  function getMonthNumber(month) {
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    return months.indexOf(month);
+  }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoaded(false);
+      try {
+        const colRef = collection(FIRESTORE_DB, getCurrUser().collectionName);
+        const querySnapshot = await getDocs(colRef);
+        const tempList = [];
+        querySnapshot.forEach((doc) => {
+
+          const currentTime = new Date();
+          currentTime.setMinutes(currentTime.getMinutes() - 15);
+
+          const itemDateParts = doc.data().date.split(" ");
+          const itemDay = parseInt(itemDateParts[0]);
+          const itemMonth = parseInt(itemDateParts[2]) - 1;
+          const itemYear = parseInt(itemDateParts[3]);
+          const itemHourParts = doc.data().hour.split(":");
+          const itemHour = parseInt(itemHourParts[0]);
+          const itemMinute = parseInt(itemHourParts[1]);
+          const itemDate = new Date(itemYear, itemMonth, itemDay, itemHour, itemMinute);
+          
+          if (itemDate > currentTime) tempList.push({...doc.data(), id: doc.id});
+        })
+        setTicketBooked(tempList);
+      } catch(error) {
+        console.log('Error in fetchData TicketScreen:', error);
+      } finally {
+        setLoaded(true);
+      }
+    }
+
+    fetchData();
+  },[isFocused])
+
+  if (!loaded) {
+    return (
+      <View style={styles.container}>
+        <StatusBar hidden />
+        <View style={styles.ticketContainer}>
+          <ActivityIndicator size={'large'} color={Colors.mainColor} />
+        </View>
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
       <View style={styles.titleSection}>
         <Text style={styles.title}>My Tickets</Text>
       </View>
       <Carousel
-        data={TicketBooked}
+        data={ticketBooked}
+        keyExtractor={item => item.id}
         renderItem={({ item, index }) => {
           return (
             <TicketCard
-              cardWidth={width * 0.7}
-              title={item.title}
-              imagePath={item.imgPath}
-              date={item.date}
-              position={item.position}
+              cardWidth={width * 0.8}
+              ticketData={item}
             />
           )
         }}
@@ -35,7 +85,6 @@ const TicketScreen = () => {
         inactiveSlideOpacity={0.6}
         sliderWidth={width}
         itemWidth={width * 0.8}
-        style={styles.ticketContainer}
       />
     </View>
   )
@@ -46,14 +95,10 @@ export default TicketScreen
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    display: 'flex',
-    // justifyContent: 'center',
-    // alignItems: 'center',
     backgroundColor: Colors.backgroundColor,
   },
   ticketContainer: {
     flex: 1,
-    display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
   },

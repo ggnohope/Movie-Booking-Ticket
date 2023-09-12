@@ -1,11 +1,12 @@
-import React, {useEffect, useState} from 'react';
-import { Text, View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator, ScrollView, StatusBar, FlatList,} from 'react-native';
+import React, {useEffect, useState, useContext} from 'react';
+import { Image, Text, View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator, ScrollView, StatusBar, FlatList,} from 'react-native';
 import { getUpcomingMoviesList, getNowPlayingMoviesList, getPopularMoviesList, baseImagePath, getGenresList, genres, } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
 import { getCurrGenresList, getCurrNowShowingMoviesList, getCurrPopularMoviesList, getCurrUpcomingMoviesList, getCurrUser, setCurrGenresList, setCurrNowShowingMoviesList, setCurrPopulargMoviesList, setCurrUpcomingMoviesList } from '../data/data';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FIRESTORE_DB } from '../../firebaseConfig';
 import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { userContext } from '../navigators/TabNavigator';
 
 import Carousel from 'react-native-snap-carousel';
 import PopularMovieCard from '../components/PopularMovieCard';
@@ -16,6 +17,7 @@ const {width, height} = Dimensions.get('window');
 
 const HomeScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
+  const user = useContext(userContext);
 
   const [nowShowingMoviesList, setNowShowingMoviesList] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -136,9 +138,10 @@ const HomeScreen = ({navigation}) => {
 
       <View style={styles.HeaderContainer}>
         <View style={styles.leftHeader}>
-            <Text style={{...styles.text, paddingHorizontal: 0, paddingVertical: 10}}>Welcome, {getCurrUser().name}</Text>
-            {/* <Text style={styles.title}>{getCurrUser().name}</Text> */}
+            <Text style={{...styles.subText, paddingHorizontal: 0, paddingTop: 20}}>Welcome {user.name}</Text>
+            <Text style={{...styles.text, paddingHorizontal: 0, paddingVertical: 10}}>Let's relax and watch a movie.</Text>
         </View>
+        <Image source={{uri: user.avatarPath}} style={{borderRadius: 10, width: 50, height: 50}}/>
       </View>
 
       <View style={styles.genresSection}>
@@ -160,6 +163,7 @@ const HomeScreen = ({navigation}) => {
       <Text style={styles.text}>Now Showing</Text>
       <Carousel
         data={nowShowingMoviesList}
+        keyExtractor={(item) => item.id}
         renderItem={({item, index})=> {
           return (
             <MovieCard
@@ -249,6 +253,9 @@ const styles = StyleSheet.create({
   },
   HeaderContainer: {
     marginHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   genresSection: {
     marginLeft: 10,
@@ -263,14 +270,20 @@ const styles = StyleSheet.create({
   },
   text: {
     fontFamily: 'nunito-bold',
-    fontSize: 20,
+    fontSize: 18,
     color: Colors.textColor,
     paddingHorizontal: 36,
     paddingVertical: 16,
     fontWeight: 'bold'
   },
+  subText: {
+    fontFamily: 'nunito-regular',
+    fontSize: 16,
+    color: 'gray',
+    paddingHorizontal: 36,
+  },
   footer: {
-    height: 20
+    height: 80
   }
 });
 

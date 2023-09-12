@@ -102,7 +102,7 @@ const LoginScreen = (props) => {
                             Don't have an account? 
                         </Text>
                         <TouchableOpacity onPress={() => navigator.navigate('Sign Up')}>
-                            <Text style={{...styles.subText, color: 'orange' }}>Sign Up</Text>
+                            <Text style={{...styles.subText, color: Colors.mainColor }}>Sign Up</Text>
                         </TouchableOpacity>
                     </View>
                     {/* {loading ? <ActivityIndicator size={'large'} color='#0000ff'/> : <View></View>} */}

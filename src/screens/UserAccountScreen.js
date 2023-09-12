@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Dimensions, Modal, StyleSheet, Text, View, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { Image, ActivityIndicator, Dimensions, Modal, StyleSheet, Text, View, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { Colors } from '../../assets/theme';
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { getCurrUser, setCurrUser } from '../data/data';
-import { FIRESTORE_DB } from '../../firebaseConfig';
-import { updateDoc, doc } from 'firebase/firestore';
+import { FIRESTORE_DB, FIREBASE_STO } from '../../firebaseConfig';
+import { updateDoc, doc} from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
+import * as ImagePicker from "expo-image-picker";
 
 const {width, height} = Dimensions.get('window');
 
@@ -22,7 +24,61 @@ const UserAccountScreen = () => {
   const [email, setEmail] = useState(user.email);
   const [address, setAddress] = useState(user.address);
   const [balance, setBalance] = useState(user.balance);
+  const [image, setImage] = useState(getCurrUser().avatarPath);
   const [loading, setLoading] = useState(false);
+
+  async function saveRecord(url) {
+    try {
+      await updateDoc(doc(FIRESTORE_DB,'User', user.id),{
+        avatarPath: url
+      });
+      setUser({...user, avatarPath: url});
+      setCurrUser({...user, avatarPath: url});
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function uploadImage(uri) {
+    setLoading(true);
+    
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    const storageRef = ref(FIREBASE_STO, getCurrUser().email);
+    const uploadTask = uploadBytesResumable(storageRef, blob);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {},
+      (error) => {
+        console.log(error);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+          console.log("File available at", downloadURL);
+
+          await saveRecord(downloadURL);
+        });
+      },
+    );
+  }
+
+  async function pickImage() {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [3, 4],
+      quality: 1,
+    });
+   
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+      await uploadImage(result.assets[0].uri);
+    }
+  }
 
   const handlePressCloseName = () => {
     setName(user.name);
@@ -132,6 +188,15 @@ const UserAccountScreen = () => {
     <View style={styles.container}>
       <View style={styles.titleSection}>
         <Text style={styles.title}>Profile</Text>
+      </View>
+
+      <View style={{justifyContent: 'center', alignItems: 'center'}}>
+        <View>
+          <Image source={{uri: image}} style={{borderColor: 'gray', borderWidth: 5, borderRadius: 100, width: 150, height: 150}}/>
+          <TouchableOpacity onPress={() => pickImage()} style={{borderRadius: 50, padding: 10, position: 'absolute', bottom: 0, right: 10, backgroundColor: Colors.mainColor}}>
+            <AntDesign name="camera" size={24} color={Colors.textColor} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Modal
@@ -401,7 +466,7 @@ const styles = StyleSheet.create({
   },
   details: {
     fontSize: 16,
-    color: '#999',
+    color: Colors.textColor,
     fontFamily: 'nunito-regular',
   },
   infoSection: {

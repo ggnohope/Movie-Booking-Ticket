@@ -19,28 +19,34 @@ const MovieDetailsScreen = ({navigation, route}) => {
   const [loaded, setLoaded] = useState(false);
   const [available, setAvailable] = useState(false);
 
+  
+
   useEffect(() => {
     const fetchData = async () => {
       setLoaded(false);
+      console.log(route.params.movieid);
+      try {
+        const movieDetails = await getMovieDetails(route.params.movieid)
+        setMovieDetails(movieDetails);
 
-      const movieDetails = await getMovieDetails(route.params.movieid)
-      setMovieDetails(movieDetails);
+        const reviews = await getReviews(route.params.movieid)
+        setReviews(reviews.results);
 
-      const reviews = await getReviews(route.params.movieid)
-      setReviews(reviews.results);
+        const castList = await getCastList(route.params.movieid)
+        setCastList(castList.cast.filter(cast => cast.known_for_department == "Acting"));
 
-      const castList = await getCastList(route.params.movieid)
-      setCastList(castList.cast.filter(cast => cast.known_for_department == "Acting"));
-
-      const nowPlayingMoviesList = getCurrNowShowingMoviesList();
-      for (let i = 0; i < nowPlayingMoviesList.length; ++i) {
-        if (nowPlayingMoviesList[i].id == route.params.movieid) {
-          setAvailable(true);
-          break;
+        const nowPlayingMoviesList = getCurrNowShowingMoviesList();
+        for (let i = 0; i < nowPlayingMoviesList.length; ++i) {
+          if (nowPlayingMoviesList[i].id == route.params.movieid) {
+            setAvailable(true);
+            break;
+          }
         }
+      } catch(error) {
+        console.log('Error in fetchData MovieDetailsScreen:', error);
+      } finally {
+        setLoaded(true);
       }
-
-      setLoaded(true);
     }
 
     fetchData();

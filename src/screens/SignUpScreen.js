@@ -4,6 +4,8 @@ import { Entypo } from '@expo/vector-icons';
 import { FIREBASE_AUTH, FIRESTORE_DB } from '../../firebaseConfig'
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import { AntDesign } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import React, { useState } from 'react'
 
 const {width, height} = Dimensions.get('window');
@@ -49,7 +51,8 @@ const SignUpScreen = ({navigation}) => {
                     address: address,
                     balance: 0,
                     email: response.user.email,
-                    collectionName: 'Cart'+response.user.email
+                    collectionName: 'Cart'+response.user.email,
+                    avatarPath: 'https://firebasestorage.googleapis.com/v0/b/cs426-booking-movietickect-app.appspot.com/o/avatar.png?alt=media&token=49ea4484-7d26-46d3-84db-42477c674d3a',
                   };
                 await setDoc(doc(FIRESTORE_DB, "User", response.user.uid), user);
                 createAlert(1);
@@ -72,6 +75,15 @@ const SignUpScreen = ({navigation}) => {
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
             <View style={styles.container}>
                 <KeyboardAvoidingView behavior='padding'>
+                    <View style={{flexDirection: 'row'}}>
+                        <BlurView 
+                            intensity={60} tint="dark" style={styles.blurContainer}
+                        >
+                            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.BackButton}>
+                            <AntDesign name="arrowleft" size={24} color={Colors.mainColor} />
+                            </TouchableOpacity>
+                        </BlurView>
+                    </View>
                     <View style={{alignItems: 'center'}}>
                         <Image source={require('../../assets/logo.png')} style={{width: width/3, height: width/3}}/>
                     </View>
@@ -188,5 +200,13 @@ const styles = StyleSheet.create({
     iconSection: {
         flexDirection: 'row',
         gap: 20
-    }
+    },
+    BackButton: {
+        padding: 10,
+        borderRadius: 15,
+      },
+    blurContainer: {
+        borderRadius: 30,
+        overflow: 'hidden',
+    },
 })

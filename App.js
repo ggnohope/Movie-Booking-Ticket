@@ -9,6 +9,7 @@ import TabNavigator from './src/navigators/TabNavigator';
 import MovieDetailsScreen from './src/screens/MovieDetailsScreen';
 import SeatBookingScreen from './src/screens/SeatBookingScreen';
 import LoginNavigator from './src/navigators/LoginNavigator';
+import OrderScreen from './src/screens/OrderScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -50,7 +51,7 @@ const App = () => {
               />}
             </Stack.Screen> :
             (<Stack.Screen
-              name="Tab"
+              name="TabNavigator"
               component={TabNavigator}
               options={{ animation: 'default' }}
             />)}
@@ -63,6 +64,11 @@ const App = () => {
             name="SeatBooking"
             component={SeatBookingScreen}
             options={{ animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="Order"
+            component={OrderScreen}
+            options={{ animation: 'slide_from_right' }}
           />
         </Stack.Navigator>
       </NavigationContainer>
