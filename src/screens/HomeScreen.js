@@ -1,5 +1,5 @@
 import React, {useEffect, useState, useContext} from 'react';
-import { Image, Text, View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator, ScrollView, StatusBar, FlatList,} from 'react-native';
+import { Image, Text, View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator, ScrollView, StatusBar, FlatList, } from 'react-native';
 import { getUpcomingMoviesList, getNowPlayingMoviesList, getPopularMoviesList, baseImagePath, getGenresList, genres, } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
 import { getCurrGenresList, getCurrNowShowingMoviesList, getCurrPopularMoviesList, getCurrUpcomingMoviesList, getCurrUser, setCurrGenresList, setCurrNowShowingMoviesList, setCurrPopulargMoviesList, setCurrUpcomingMoviesList } from '../data/data';
@@ -13,6 +13,7 @@ import PopularMovieCard from '../components/PopularMovieCard';
 import ComingSoonMovieCard from '../components/ComingSoonMovieCard';
 import MovieCard from '../components/MovieCard';
 
+// lamkhanhhoa@gmail.com
 const {width, height} = Dimensions.get('window');
 
 const HomeScreen = ({navigation}) => {

@@ -1,25 +1,40 @@
-import { Dimensions, ImageBackground, StatusBar, ScrollView, ActivityIndicator, StyleSheet, Text, View, TouchableOpacity, TouchableWithoutFeedback, FlatList } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import { getMovieDetails, getReviews, getCastList, baseImagePath } from '../api/apicalls';
+import { Dimensions, ImageBackground, StatusBar, ScrollView, ActivityIndicator, StyleSheet, Text, View, TouchableOpacity, Alert, Button, FlatList, Modal, TouchableWithoutFeedback, Keyboard, } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { getMovieDetails, getReviews, getCastList, baseImagePath, getMovieTrailer } from '../api/apicalls';
 import { Colors } from '../../assets/theme';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { getCurrNowShowingMoviesList } from '../data/data';
+import YoutubePlayer from "react-native-youtube-iframe";
 
 import CastCard from '../components/CastCard';
 import CommentCard from '../components/CommentCard';
 
-const {width, height} = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-const MovieDetailsScreen = ({navigation, route}) => {
+const MovieDetailsScreen = ({ navigation, route }) => {
   const [movieDetails, setMovieDetails] = useState(null);
   const [reviews, setReviews] = useState(null);
   const [castList, setCastList] = useState(null);
+  const [movieTrailer, setMovieTrailer] = useState(null);
+  const [modalTrailer, setModalTrailer] = useState(false)
+
   const [loaded, setLoaded] = useState(false);
   const [available, setAvailable] = useState(false);
 
-  
+  const [playing, setPlaying] = useState(false);
+  const onStateChange = useCallback((state) => {
+    if (state === "ended") {
+      setPlaying(false);
+      Alert.alert("video has finished playing!");
+    }
+  }, []);
+
+  const togglePlaying = useCallback(() => {
+    setPlaying((prev) => !prev);
+  }, []);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,6 +50,10 @@ const MovieDetailsScreen = ({navigation, route}) => {
         const castList = await getCastList(route.params.movieid)
         setCastList(castList.cast.filter(cast => cast.known_for_department == "Acting"));
 
+        const movieTrailer = await getMovieTrailer(route.params.movieid)
+        setMovieTrailer(movieTrailer);
+
+
         const nowPlayingMoviesList = getCurrNowShowingMoviesList();
         for (let i = 0; i < nowPlayingMoviesList.length; ++i) {
           if (nowPlayingMoviesList[i].id == route.params.movieid) {
@@ -42,25 +61,25 @@ const MovieDetailsScreen = ({navigation, route}) => {
             break;
           }
         }
-      } catch(error) {
+      } catch (error) {
         console.log('Error in fetchData MovieDetailsScreen:', error);
       } finally {
         setLoaded(true);
       }
     }
-
+    // console.log(movieTrailer)
     fetchData();
   }, []);
 
   const renderGenres = () => {
     return (
       movieDetails.genres.map((genre, index) => {
-          if (index < 3) return (
-            <View style={styles.genreBox}>
-              <Text style={styles.subText}>{genre.name}</Text>
-            </View>
-          )
-        }
+        if (index < 3) return (
+          <View style={styles.genreBox}>
+            <Text style={styles.subText}>{genre.name}</Text>
+          </View>
+        )
+      }
       )
     )
   }
@@ -79,19 +98,54 @@ const MovieDetailsScreen = ({navigation, route}) => {
       </ScrollView>
     );
   }
+
+
   return (
+
     <ScrollView style={styles.container}>
       <StatusBar hidden />
-
+      {console.log(movieTrailer.videos.results[0].key)}
       <View>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalTrailer}
+          onRequestClose={() => {
+            setModalTrailer(!modalTrailer);
+          }}>
+          <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <View style={{ flexDirection: 'row', gap: 20, paddingTop: 10, justifyContent: 'flex-end' }}>
+                  <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => setModalTrailer(!modalTrailer)}>
+                    {/* <Text style={{ ...styles.title, fontSize: 20, color: 'white' }}>X</Text> */}
+                    <AntDesign name="closecircleo" size={30} color={Colors.mainColor} />
+                  </TouchableOpacity>
+                </View>
+                <View>
+                  <YoutubePlayer
+                    height={230}
+                    width={400}
+                    play={playing}
+                    videoId={movieTrailer.videos.results[0].key}
+                    onChangeState={onStateChange}
+                  />
+                  {/* <Button style={{ backgroundColor: Colors.mainColor }} title={playing ? "pause" : "play"} onPress={togglePlaying} /> */}
+                </View>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
         <ImageBackground
-          source={{uri: baseImagePath('w780', movieDetails.backdrop_path)}}
+          source={{ uri: baseImagePath('w780', movieDetails.backdrop_path) }}
           style={styles.imageBG}
         >
           <LinearGradient colors={['rgba(0,0,0,0.1)', Colors.backgroundColor]} style={styles.linearGradient}>
-            
-            <View style={{flexDirection: 'row'}}>
-              <BlurView 
+
+            <View style={{ flexDirection: 'row' }}>
+              <BlurView
                 intensity={60} tint="dark" style={styles.blurContainer}
               >
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.BackButton}>
@@ -100,56 +154,57 @@ const MovieDetailsScreen = ({navigation, route}) => {
               </BlurView>
             </View>
 
-            <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
-              <BlurView 
+            <View style={{ justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+              <BlurView
                 intensity={60} tint="dark" style={styles.blurContainer}
               >
-                <TouchableOpacity onPress={() => {}} style={styles.BackButton}>
+                <TouchableOpacity onPress={() => { setModalTrailer(!modalTrailer); togglePlaying }} style={styles.BackButton}>
                   <AntDesign name="caretright" size={24} color={Colors.mainColor} />
                 </TouchableOpacity>
               </BlurView>
+
             </View>
 
-            <View style={{justifyContent: 'flex-end', alignItems: 'center', flex: 1, paddingBottom: 30}}>
-              { available ?
-              (<TouchableOpacity onPress={() => {navigation.navigate('SeatBooking', {movieDetails: movieDetails})}} style={{borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.mainColor, paddingHorizontal: 20, paddingVertical: 10}}>
-                <MaterialCommunityIcons name="ticket-confirmation-outline" size={30} color="white" />
-                <Text style={styles.text}>Get Tickets</Text>
-              </TouchableOpacity>)
-              :
-              (<View style={{borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'gray', paddingHorizontal: 20, paddingVertical: 10}}>
-                <MaterialCommunityIcons name="ticket-confirmation-outline" size={30} color="white" />
-                <Text style={styles.text}>Unavailable</Text>
-              </View>)
+            <View style={{ justifyContent: 'flex-end', alignItems: 'center', flex: 1, paddingBottom: 30 }}>
+              {available ?
+                (<TouchableOpacity onPress={() => { navigation.navigate('SeatBooking', { movieDetails: movieDetails }) }} style={{ borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.mainColor, paddingHorizontal: 20, paddingVertical: 10 }}>
+                  <MaterialCommunityIcons name="ticket-confirmation-outline" size={30} color="white" />
+                  <Text style={styles.text}>Get Tickets</Text>
+                </TouchableOpacity>)
+                :
+                (<View style={{ borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'gray', paddingHorizontal: 20, paddingVertical: 10 }}>
+                  <MaterialCommunityIcons name="ticket-confirmation-outline" size={30} color="white" />
+                  <Text style={styles.text}>Unavailable</Text>
+                </View>)
               }
             </View>
 
           </LinearGradient>
         </ImageBackground>
       </View>
-      
-      <View style={{paddingHorizontal: 10}}>
 
-        <View style={{paddingTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-          <View style={{flexDirection: 'row'}}>
+      <View style={{ paddingHorizontal: 10 }}>
+
+        <View style={{ paddingTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row' }}>
             {renderGenres()}
           </View>
-          <View style={{flexDirection: 'row', alignItems: 'center', gap: 5, marginRight: 5}}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginRight: 5 }}>
             <AntDesign name="clockcircle" size={16} color={Colors.textColor} />
-            <Text style={{...styles.subText, fontSize: 12}}>{movieDetails.runtime} minutes</Text>
+            <Text style={{ ...styles.subText, fontSize: 12 }}>{movieDetails.runtime} minutes</Text>
           </View>
         </View>
 
-        <View style={{paddingVertical: 20}}>
-          <Text style={{...styles.text, fontSize: 24}}>{movieDetails.original_title}</Text>
+        <View style={{ paddingVertical: 20 }}>
+          <Text style={{ ...styles.text, fontSize: 24 }}>{movieDetails.original_title}</Text>
         </View>
 
         <View>
           <Text numberOfLines={6} style={styles.subText}>{movieDetails.overview}</Text>
         </View>
 
-        <View style={{paddingVertical: 20}}>
-          <Text style={{...styles.text, fontSize: 20}}>Top Cast</Text>
+        <View style={{ paddingVertical: 20 }}>
+          <Text style={{ ...styles.text, fontSize: 20 }}>Top Cast</Text>
         </View>
 
         <View>
@@ -159,11 +214,11 @@ const MovieDetailsScreen = ({navigation, route}) => {
             horizontal
             bounces={false}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{gap: 5}}
+            contentContainerStyle={{ gap: 5 }}
             decelerationRate="fast"
-            renderItem={({item, index}) => (
+            renderItem={({ item, index }) => (
               <CastCard
-                cardWidth={width/6}
+                cardWidth={width / 6}
                 isFirst={index == 0 ? true : false}
                 isLast={index == castList.length - 1 ? true : false}
                 name={item.name}
@@ -173,11 +228,11 @@ const MovieDetailsScreen = ({navigation, route}) => {
           />
         </View>
 
-        <View style={{paddingVertical: 20}}>
-          <Text style={{...styles.text, fontSize: 20}}>Reviews</Text>
+        <View style={{ paddingVertical: 20 }}>
+          <Text style={{ ...styles.text, fontSize: 20 }}>Reviews</Text>
         </View>
-        
-        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={styles.subText}>{reviews.length} Comments</Text>
           <View style={styles.voteContainer}>
             <AntDesign name="star" size={18} color={Colors.mainColor} />
@@ -191,9 +246,9 @@ const MovieDetailsScreen = ({navigation, route}) => {
             keyExtractor={(item) => item.id}
             bounces={false}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{gap: 0}}
+            contentContainerStyle={{ gap: 0 }}
             decelerationRate="fast"
-            renderItem={({item, index}) => (
+            renderItem={({ item, index }) => (
               <CommentCard
                 cardWidth={width}
                 name={item.author}
@@ -270,5 +325,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 160,
+  },
+  modalView: {
+    backgroundColor: Colors.backgroundColor,
+    borderRadius: 20,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  button: {
+    borderRadius: 50,
+    elevation: 2,
+    marginBottom: 12,
   },
 })
