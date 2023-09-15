@@ -67,7 +67,6 @@ const MovieDetailsScreen = ({ navigation, route }) => {
         setLoaded(true);
       }
     }
-    // console.log(movieTrailer)
     fetchData();
   }, []);
 
@@ -120,14 +119,13 @@ const MovieDetailsScreen = ({ navigation, route }) => {
                   <TouchableOpacity
                     style={styles.button}
                     onPress={() => setModalTrailer(!modalTrailer)}>
-                    {/* <Text style={{ ...styles.title, fontSize: 20, color: 'white' }}>X</Text> */}
-                    <AntDesign name="closecircleo" size={30} color={Colors.mainColor} />
+                    <AntDesign name="closecircle" size={24} color={Colors.mainColor} />
                   </TouchableOpacity>
                 </View>
                 <View>
                   <YoutubePlayer
-                    height={230}
-                    width={400}
+                    width={width-40}
+                    height={width/1.8}
                     play={playing}
                     videoId={movieTrailer.videos.results[0].key}
                     onChangeState={onStateChange}
@@ -331,9 +329,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 160,
+    marginHorizontal: 20,
   },
   modalView: {
-    backgroundColor: Colors.backgroundColor,
+    backgroundColor: 'white',
     borderRadius: 20,
     padding: 10,
     shadowColor: '#000',
@@ -341,13 +340,13 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
+    margin: 20,
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
   },
   button: {
     borderRadius: 50,
-    elevation: 2,
     marginBottom: 12,
   },
 })
