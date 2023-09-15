@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Image, ActivityIndicator, Dimensions, Modal, StyleSheet, Text, View, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { Colors } from '../../assets/theme';
 import { AntDesign, Feather } from '@expo/vector-icons';
@@ -6,15 +6,13 @@ import { getCurrUser, setCurrUser } from '../data/data';
 import { FIRESTORE_DB, FIREBASE_STO } from '../../firebaseConfig';
 import { updateDoc, doc} from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { userContext } from '../navigators/TabNavigator';
 
 import * as ImagePicker from "expo-image-picker";
 
 const {width, height} = Dimensions.get('window');
 
 const UserAccountScreen = () => {
-  const currUser = useContext(userContext);
-  const [user, setUser] = useState(currUser);
+  const [user, setUser] = useState(getCurrUser());
   const [modalName, setModalName] = useState(false);
   const [modalPhone, setModalPhone] = useState(false);
   const [modalEmail, setModalEmail] = useState(false);
@@ -28,10 +26,6 @@ const UserAccountScreen = () => {
   const [balance, setBalance] = useState(user.balance);
   const [image, setImage] = useState(getCurrUser().avatarPath);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setUser(currUser);
-  }, [currUser]);
 
   async function saveRecord(url) {
     try {
